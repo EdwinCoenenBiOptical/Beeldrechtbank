@@ -12,7 +12,7 @@
    `https://JOUW-HOST/auth/callback` en
    `https://JOUW-HOST/auth/callback?next=%2Freset-password`.
    Voor ontwikkeling op je eigen computer kun je de overeenkomstige URLs met
-   `http://localhost:3000` toevoegen. Er is nog geen publieke hosting gekozen.
+   `http://localhost:3000` toevoegen. De huidige testhost is `https://eclectic-bublanina-b08cc8.netlify.app`.
    Gebruik voor productie geen onbeperkte wildcard.
 5. Stel de twee variabelen uit `.env.example` in bij je hosting. De publishable
    key is openbaar bedoeld. Gebruik hier nooit een secret/service_role-key.
@@ -49,3 +49,34 @@ Stel zo nodig eigen SMTP in voordat je externe redacteuren uitnodigt.
 
 Live uitvoering van deze controles vereist dat de SQL-migratie is toegepast,
 callbacks ingesteld en een testpersoon de e-mailstappen zelf doorloopt.
+
+## Bedrijfstarieven aansluiten
+
+Na de accountmigratie en goedkeuring:
+
+1. Voer `migrations/002_prices.sql` eenmaal uit in SQL Editor. Dit voegt actieve
+   gebruiksdoelen en bedrijfstarieven met geldigheidsperiodes toe.
+2. Voer `set-edwin-prices.sql` eenmaal uit. Voor het bestaande bedrijf met
+   KvK 77328949 worden Online € 100, Print € 175 en TV € 250 ingesteld, exclusief
+   btw. Er worden drie tariefregels teruggegeven. De bedragen zijn in eurocenten.
+   Het script maakt geen nieuw bedrijf, bestelling of factuur.
+3. Wacht tot de Netlify-deployment van de gewijzigde branch klaar is. Log in en
+   open een tekening: dezelfde drie tarieven gelden voor elke tekening.
+4. Wissel het gebruiksdoel. De gekozen prijs moet wijzigen; zonder tarief wordt
+   'Op aanvraag' getoond. Er is nog geen download- of bestelknop.
+
+Tarieven worden per KvK-gekoppeld bedrijf opgehaald vanuit het goedgekeurde
+profiel, niet uit URL-parameters of door de gebruiker opgegeven bedrijf-ID's.
+Niet-goedgekeurde accounts kunnen geen tarieven lezen of aanpassen. Een tweede
+medewerker van hetzelfde bedrijf krijgt dezelfde tarieven.
+
+De periode loopt vanaf `valid_from` (inclusief) tot `valid_until` (exclusief).
+Een lege einddatum betekent onbeperkt. Datums gebruiken de UTC-dag, zoals de
+Supabase-database. Overlappende periodes voor bedrijf/gebruiksdoel worden door
+PostgreSQL geweigerd. Bij nieuwe tarieven: sluit de vorige periode af en maak
+in één transactie een aansluitende periode. Historische bestelprijzen zullen
+later apart als snapshots worden opgeslagen.
+
+Dit tariefscript kan op dezelfde dag opnieuw worden uitgevoerd. Op een latere
+uitvoeringsdag kan het niet zomaar naast een bestaande open periode worden
+geplaatst; bespreek eventuele fouten voordat je opnieuw uitvoert.

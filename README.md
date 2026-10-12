@@ -27,17 +27,20 @@ Alle zaakgegevens zijn fictief; de beelden komen uit de aangeleverde mockup.
 Registratie, inloggen, e-mailbevestiging, wachtwoordherstel en accountstatus
 zijn geïmplementeerd. Live gebruik vereist de Supabase-migratie en instellingen
 in [database/README.md](database/README.md). Persoonlijke goedkeuring gebeurt
-voorlopig via de SQL Editor. Daarna volgen bedrijfstarieven voor Online, Print en TV, expliciete downloadafspraken,
+voorlopig via de SQL Editor. Bedrijfstarieven voor Online, Print en TV zijn aangesloten via `GET /api/prices`.
+Voer eerst `002_prices.sql` en het afzonderlijke tariefscript uit volgens de
+databasehandleiding. Vervolgens bouwen we expliciete downloadafspraken,
 privéopslag van originele bestanden en een beheerscherm.
-Er is nog geen beschermde download beschikbaar. Live registratie en e-mail zijn
-nog niet gevalideerd tegen het project.
+Er is nog geen beschermde download beschikbaar. De gebruiker heeft live
+registratie, e-mailbevestiging en goedkeuring in de testapp doorlopen. De nieuwe
+tarieven moeten nog in het live project worden toegepast en gecontroleerd.
 
 `database/schema.sql` bevat een nog niet toegepaste basis voor het datamodel.
 Voer deze modelschets niet uit. De uitvoerbare accountmigratie staat apart onder
 `database/migrations`. `npm test` controleert de migratie, profieltrigger en
 lees-/schrijfrechten in lokale PostgreSQL (PGlite), zonder live projectwijzigingen.
-Elke afspraak bewaart de prijs, bedrijfsnaam, gebruiksnaam en akkoordtekst als
-snapshot. Herhaald gebruik binnen het gekozen doel is toegestaan aan hetzelfde
+Bij toekomstige bestellingen bewaren we de prijs, bedrijfsnaam, gebruiksnaam
+en akkoordtekst als snapshot. Herhaald gebruik binnen het gekozen doel is toegestaan aan hetzelfde
 bedrijf. Facturatie blijft buiten de applicatie.
 
 De openbare previews zijn geen beschermde originelen. Controleer de toestemming
@@ -53,4 +56,5 @@ opslag van tokens en tokenvernieuwing zijn nog niet ingericht. Een Family-
 abonnement geeft de applicatie niet automatisch toegang tot bestanden.
 Gebruik geen permanente openbare deellinks voor beschermde originelen.
 De backend moet eerst accountstatus en bestaand gebruiksrecht controleren.
-Hosting is nog niet gekozen en er is nog geen openbare applicatie-URL.
+De testapp staat op https://eclectic-bublanina-b08cc8.netlify.app/ via branch
+`initial-image-catalogue`. Nieuwe commits moeten daar eerst worden gedeployd.
