@@ -83,3 +83,11 @@ bij een bestaand testgebruiksrecht voor NVH-0001. Downloadregistratie blijft apa
 van bestellingen; herhalen maakt geen extra bestelling. Zie
 [de testdownloadhandleiding](database/TEST_DOWNLOADS.md). Klantdownloads blijven
 uitgeschakeld; deze fase is uitsluitend een beheerderstest met één bestand.
+
+## Aanmeldingsnotificaties
+
+Nieuwe aanmeldingen kunnen via een beveiligde mailworker worden gemeld aan
+rechtbanktekeningen@nicolevandenhout.nl. De code en wachtrij zijn voorbereid;
+maildienst, afzenderverificatie, server-only variabelen en webhook/periodieke job
+moeten nog worden ingesteld. Zie [de mailhandleiding](database/REGISTRATION_EMAIL.md).
+Er zijn hiervoor nog geen live e-mails verstuurd.
