@@ -56,3 +56,9 @@ Zo zijn een geweigerde Graph-aanvraag, geblokkeerde host en bestand met een
 verkeerd formaat afzonderlijk te herkennen.
 
 Referentie: https://learn.microsoft.com/en-us/graph/api/driveitem-get-content
+
+De toegestane downloadhosts bevatten ook de exacte host
+`my.microsoftpersonalcontent.com`, zoals teruggegeven door Graph tijdens de live
+beheerderstest. Andere hosts onder dat domein zijn niet automatisch toegestaan.
+HTTPS, bytegrenzen, bestandsformaatcontrole en het weglaten van Bearer-tokens op
+alle downloadhosts blijven verplicht.
