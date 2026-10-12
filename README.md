@@ -29,11 +29,13 @@ zijn geïmplementeerd. Live gebruik vereist de Supabase-migratie en instellingen
 in [database/README.md](database/README.md). Persoonlijke goedkeuring gebeurt
 voorlopig via de SQL Editor. Bedrijfstarieven voor Online, Print en TV zijn aangesloten via `GET /api/prices`.
 Voer eerst `002_prices.sql` en het afzonderlijke tariefscript uit volgens de
-databasehandleiding. Vervolgens bouwen we expliciete downloadafspraken,
-privéopslag van originele bestanden en een beheerscherm.
+databasehandleiding. Testbestellingen met expliciet akkoord, 21% btw en bewaarde prijs-/tekst-snapshots
+zijn toegevoegd. Voer `003_test_orders.sql` uit om dit te proberen. Alle
+bestellingen zijn voorlopig testbestellingen, zonder factuur of origineel bestand.
+Vervolgens sluiten we OneDrive-downloads en het beheerscherm aan.
 Er is nog geen beschermde download beschikbaar. De gebruiker heeft live
-registratie, e-mailbevestiging en goedkeuring in de testapp doorlopen. De nieuwe
-tarieven moeten nog in het live project worden toegepast en gecontroleerd.
+registratie, e-mailbevestiging en goedkeuring in de testapp doorlopen. De gebruiker heeft ook de live bedrijfstarieven gecontroleerd. De nieuwe
+testbestelstap vereist nog migratie 003 en een eigen live test.
 
 `database/schema.sql` bevat een nog niet toegepaste basis voor het datamodel.
 Voer deze modelschets niet uit. De uitvoerbare accountmigratie staat apart onder

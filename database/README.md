@@ -80,3 +80,42 @@ later apart als snapshots worden opgeslagen.
 Dit tariefscript kan op dezelfde dag opnieuw worden uitgevoerd. Op een latere
 uitvoeringsdag kan het niet zomaar naast een bestaande open periode worden
 geplaatst; bespreek eventuele fouten voordat je opnieuw uitvoert.
+
+## Testbestelling en akkoordverklaring
+
+Voer `migrations/003_test_orders.sql` eenmaal uit, na 001 en 002. Laat bestaande
+account- en tariefgegevens intact. Dit voegt de twaalf voorbeeldtekeningen,
+een voorwaardenversie, testbestellingen, bestelregels en aparte gebruiksrechten toe.
+Alle bestellingen in deze fase hebben `is_test = true`; dit wordt door de
+SQL-constraints afgedwongen. Er worden geen facturen of originele downloads gemaakt.
+De overstap naar echte bestellingen vereist een aparte migratie en de OneDrive-koppeling.
+
+Na de Netlify-deployment: open een tekening, kies Online, Print of TV, controleer
+bedrijf, titel, doel, bedrag exclusief btw, 21% btw en totaal. Vink de weergegeven
+akkoordverklaring aan en klik Testbestelling bevestigen. De knop blijft zonder
+akkoord uitgeschakeld. Daarna zie je het testbestelnummer en de bewaarde afspraak.
+Herlaad de pagina: hetzelfde recht wordt teruggevonden. Een tweede medewerker van
+hetzelfde bedrijf kan hetzelfde recht gebruiken zonder nieuwe bestelling.
+
+| Gebruik | Excl. btw | 21% btw | Inclusief btw |
+| --- | ---: | ---: | ---: |
+| Online | € 100,00 | € 21,00 | € 121,00 |
+| Print | € 175,00 | € 36,75 | € 211,75 |
+| TV | € 250,00 | € 52,50 | € 302,50 |
+
+Btw wordt per bestelregel naar de dichtstbijzijnde hele cent afgerond; halve
+centen naar boven. De server berekent prijs en btw opnieuw en vergelijkt de
+zichtbare prijs en exacte akkoordtekst. Bij een wijziging moet de gebruiker
+opnieuw controleren en akkoord gaan. De server neemt geen bedrijf-ID, totaal of
+zelfgeschreven voorwaarden van de browser over als waarheid.
+
+`orders`, `order_items` en `usage_rights` zijn alleen leesbaar voor goedgekeurde
+medewerkers van het betreffende bedrijf. Rechtstreekse writes zijn geblokkeerd;
+de transactionele RPC controleert ook bij directe aanroepen e-mailbevestiging,
+goedkeuring, tarief, publicatiestatus en expliciet akkoord. De bevestiging en
+het gebruiksrecht worden samen opgeslagen; herhaling wordt per bedrijf/beeld/doel
+herkend. Bewaar oude voorwaardenversies: nieuwe tekst krijgt een nieuw record in
+`agreement_versions`, waarnaar `checkout_settings.agreement_id` gaat verwijzen.
+
+`npm test` controleert dit in lokale PostgreSQL. Live werking vereist het script
+en een eigen handmatige test; de lokale browsercontrole gebruikt gesimuleerde API-antwoorden.

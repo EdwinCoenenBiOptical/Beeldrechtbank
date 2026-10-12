@@ -16,4 +16,4 @@ export async function proxy(request: NextRequest) {
   try { await client.auth.getUser(); } catch { /* Public catalogue remains available during auth outages. */ }
   return response;
 }
-export const config = {matcher: ['/api/account', '/api/prices', '/auth/callback', '/reset-password']};
+export const config = {matcher: ['/api/account', '/api/prices', '/api/orders', '/auth/callback', '/reset-password']};

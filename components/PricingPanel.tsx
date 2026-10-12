@@ -1,11 +1,12 @@
 'use client';
 import {useEffect,useState} from 'react';
 import {browserClient} from '../lib/supabase/browser';
+import {PurchasePanel} from './PurchasePanel';
 import {supabaseConfig} from '../lib/supabase/config';
 type Price={purpose_id:string;name:string;amount_cents:number|null;currency:string};
 type Tariffs={company:{name:string;customer_number:number};prices:Price[]};
 const money=(cents:number,currency:string)=>new Intl.NumberFormat('nl-NL',{style:'currency',currency}).format(cents/100);
-export function PricingPanel(){
+export function PricingPanel({drawingKey}:{drawingKey:string}){
  const [data,setData]=useState<Tariffs|null>(null),[selected,setSelected]=useState(''),[busy,setBusy]=useState(true),[error,setError]=useState(''),[code,setCode]=useState(0);
  useEffect(()=>{
   let active=true;let generation=0;let controller:AbortController|undefined;
@@ -26,7 +27,8 @@ export function PricingPanel(){
  {data&&<><p className="tiny muted">Tarief voor {data.company.name} · Klant {data.company.customer_number}</p>
  {data.prices.map(p=><label className="license" key={p.purpose_id}><input type="radio" name="purpose" checked={selected===p.purpose_id} onChange={()=>setSelected(p.purpose_id)}/><span>{p.name}<small>Herhaald gebruik door hetzelfde bedrijf</small></span><b>{p.amount_cents===null?'Op aanvraag':money(p.amount_cents,p.currency)}</b></label>)}
  {!data.prices.length&&<p className="status">Er zijn nog geen gebruiksdoelen beschikbaar.</p>}
- {chosen&&chosen.amount_cents!==null?<><div className="price"><span>Tarief <small className="muted">excl. btw</small></span><b>{money(chosen.amount_cents,chosen.currency)}</b></div><p className="status">Je bedrijfstarief is beschikbaar. De downloadafspraak en beveiligde download worden in de volgende stap aangesloten.</p></>:chosen&&<p className="status">Voor {chosen.name} is nog geen bedrijfstarief ingesteld. Downloaden voor dit gebruiksdoel is niet beschikbaar.</p>}
+ {chosen&&chosen.amount_cents!==null?<><div className="price"><span>Tarief <small className="muted">excl. btw</small></span><b>{money(chosen.amount_cents,chosen.currency)}</b></div></>:chosen&&<p className="status">Voor {chosen.name} is nog geen bedrijfstarief ingesteld. Downloaden voor dit gebruiksdoel is niet beschikbaar.</p>}
+ {chosen&&<PurchasePanel key={chosen.purpose_id} drawingKey={drawingKey} purposeId={chosen.purpose_id}/>}
  </>}
  <p className="tiny muted">Voor een download bevestig je de prijs, het gebruiksdoel en dat jouw bedrijf een factuur ontvangt. Facturatie gebeurt apart.</p></>
 }
