@@ -11,6 +11,7 @@ npm ci
 npm run dev
 ```
 
+Kopieer `.env.example` naar `.env.local` en vul de publishable key in.
 Voor een productiebuild: `npm run build`, gevolgd door `npm start`.
 Na de eerste build controleert `npm run typecheck` de TypeScript-code.
 
@@ -23,14 +24,18 @@ Alle zaakgegevens zijn fictief; de beelden komen uit de aangeleverde mockup.
 
 ## Volgende stap
 
-Echte Supabase-authenticatie, persoonlijke goedkeuring en koppeling aan bedrijven.
-Daarna bedrijfstarieven voor Online, Print en TV, expliciete downloadafspraken,
+Registratie, inloggen, e-mailbevestiging, wachtwoordherstel en accountstatus
+zijn geïmplementeerd. Live gebruik vereist de Supabase-migratie en instellingen
+in [database/README.md](database/README.md). Persoonlijke goedkeuring gebeurt
+voorlopig via de SQL Editor. Daarna volgen bedrijfstarieven voor Online, Print en TV, expliciete downloadafspraken,
 privéopslag van originele bestanden en een beheerscherm.
-Er is momenteel geen echte login, registratie of beschermde download beschikbaar.
+Er is nog geen beschermde download beschikbaar. Live registratie en e-mail zijn
+nog niet gevalideerd tegen het project.
 
 `database/schema.sql` bevat een nog niet toegepaste basis voor het datamodel.
-Row-level security staat standaard op blokkeren; toegangspolicies en beveiligde
-serveracties moeten worden toegevoegd voordat dit model wordt gebruikt.
+Voer deze modelschets niet uit. De uitvoerbare accountmigratie staat apart onder
+`database/migrations`. `npm test` controleert de migratie, profieltrigger en
+lees-/schrijfrechten in lokale PostgreSQL (PGlite), zonder live projectwijzigingen.
 Elke afspraak bewaart de prijs, bedrijfsnaam, gebruiksnaam en akkoordtekst als
 snapshot. Herhaald gebruik binnen het gekozen doel is toegestaan aan hetzelfde
 bedrijf. Facturatie blijft buiten de applicatie.

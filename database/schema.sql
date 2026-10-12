@@ -1,4 +1,7 @@
--- Proposed Supabase model. Review and apply when connecting the project.
+-- Historical, incomplete model sketch. DO NOT EXECUTE.
+-- Accounts are implemented in migrations/001_accounts.sql.
+-- Future purchases, entitlements and download events must be separate tables.
+-- Original storage will be OneDrive Personal through Microsoft Graph.
 create table public.companies (
  id uuid primary key default gen_random_uuid(), name text not null,
  created_at timestamptz not null default now()

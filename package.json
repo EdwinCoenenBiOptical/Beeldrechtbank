@@ -6,7 +6,8 @@
     "dev": "next dev --hostname 0.0.0.0",
     "build": "next build",
     "start": "next start --hostname 0.0.0.0",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "node --test tests/*.mjs"
   },
   "repository": {
     "type": "git",
@@ -21,11 +22,14 @@
   "homepage": "https://github.com/EdwinCoenenBiOptical/Beeldrechtbank#readme",
   "private": true,
   "dependencies": {
+    "@supabase/ssr": "^0.12.7",
+    "@supabase/supabase-js": "^2.117.3",
     "next": "^16.4.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8",
     "@types/node": "^26.6.5",
     "@types/react": "^19.3.0",
     "typescript": "^7.0.2"
