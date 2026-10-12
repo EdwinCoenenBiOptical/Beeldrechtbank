@@ -6,11 +6,19 @@ test('protected JPEG fetch limits size and keeps Graph token off delivery hosts'
  assert.equal(trustedDownloadUrl('https://public.dm.files.1drv.com/test'),'https://public.dm.files.1drv.com/test');
  for(const url of ['http://public.dm.files.1drv.com/test','https://evil.example/test','https://files.1drv.com.evil.example/test','https://user:pass@files.1drv.com/test','https://files.1drv.com:444/test'])assert.throws(()=>trustedDownloadUrl(url));
  let requests=[];const bytes=await fetchTestJpeg('fictional-token',{driveId:'drive',itemId:'item',fileName:'NVH-001.jpg',size:jpeg.length},async(url,options)=>{requests.push({url,options});return requests.length===1?new Response(null,{status:302,headers:{location:'https://public.dm.files.1drv.com/test'}}):new Response(jpeg)});
- assert.deepEqual(new Uint8Array(bytes),jpeg);assert.equal(requests[0].options.headers.Authorization,'Bearer fictional-token');assert.equal(requests[1].options.headers,undefined);assert.equal(requests[1].options.redirect,'error');
- await assert.rejects(boundedJpeg(new Response('not an image')),/DOWNLOAD_UNAVAILABLE/);
+ assert.deepEqual(new Uint8Array(bytes),jpeg);assert.equal(requests[0].options.headers.Authorization,'Bearer fictional-token');assert.equal(requests[1].options.headers,undefined);assert.equal(requests[1].options.redirect,'manual');assert.ok(requests[0].url.includes('/me/drive/items/item/content'));
+ let hops=0;
+ await fetchTestJpeg('token',{itemId:'item',fileName:'NVH-001.JPG',size:jpeg.length},async(url,options)=>{
+  hops++;if(hops===1)return new Response(null,{status:302,headers:{location:'https://first.files.1drv.com/test'}});
+  assert.equal(options.headers,undefined);return hops===2?new Response(null,{status:302,headers:{location:'https://second.files.1drv.com/test'}}):new Response(jpeg);
+ });assert.equal(hops,3);
+ await assert.rejects(fetchTestJpeg('token',{itemId:'item',fileName:'NVH-001.jpg',size:1},async()=>new Response(null,{status:403})),error=>error.message==='DOWNLOAD_GRAPH_ERROR'&&error.httpStatus===403);
+ await assert.rejects(fetchTestJpeg('token',{itemId:'item',fileName:'NVH-001.jpg',size:1},async()=>new Response(null,{status:302,headers:{location:'https://loop.files.1drv.com/test'}})),/DOWNLOAD_REDIRECT_LIMIT/);
+
+ await assert.rejects(boundedJpeg(new Response('not an image')),/DOWNLOAD_(HOST_BLOCKED|NOT_JPEG)/);
  await assert.rejects(boundedJpeg(new Response(jpeg,{headers:{'content-length':String(maxTestBytes+1)}})),/FILE_TOO_LARGE/);
  await assert.rejects(boundedJpeg(new Response(new Uint8Array(maxTestBytes+1))),/FILE_TOO_LARGE/);
- await assert.rejects(fetchTestJpeg('token',{driveId:'drive',itemId:'item',fileName:'NVH-001.jpg',size:jpeg.length},async()=>new Response(null,{status:302,headers:{location:'https://evil.example/test'}})),/DOWNLOAD_UNAVAILABLE/);
+ await assert.rejects(fetchTestJpeg('token',{driveId:'drive',itemId:'item',fileName:'NVH-001.jpg',size:jpeg.length},async()=>new Response(null,{status:302,headers:{location:'https://evil.example/test'}})),/DOWNLOAD_(HOST_BLOCKED|NOT_JPEG)/);
 });
 test('test downloads need explicit admin and a right, repeat without extra orders, history stays company scoped',async()=>{
  const db=new PGlite({extensions:{btree_gist}});try{

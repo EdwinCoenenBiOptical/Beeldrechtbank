@@ -46,3 +46,13 @@ herhaald downloaden zonder nieuwe bestelling, bedrijvenisolatie, bytegrenzen en
 het niet doorgeven van tokens aan CDN-hosts. Browsercontroles gebruiken een klein
 JPEG-testbestand en gesimuleerde API-antwoorden. De echte OneDrive-download moet
 na de migratie en deployment met het bestaande beheeraccount worden geprobeerd.
+
+De download gebruikt de door Microsoft gedocumenteerde route
+`/me/drive/items/{item-id}/content`. Maximaal drie achtereenvolgende omleidingen
+zijn toegestaan; iedere URL wordt opnieuw gevalideerd en ontvangt geen Graph-
+token. Bij fouten toont de app een controlecode, eventueel HTTP-status en
+hostnaam. Tijdelijke download-URL's, response-inhoud en tokens blijven verborgen.
+Zo zijn een geweigerde Graph-aanvraag, geblokkeerde host en bestand met een
+verkeerd formaat afzonderlijk te herkennen.
+
+Referentie: https://learn.microsoft.com/en-us/graph/api/driveitem-get-content
