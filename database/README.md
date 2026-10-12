@@ -119,3 +119,16 @@ herkend. Bewaar oude voorwaardenversies: nieuwe tekst krijgt een nieuw record in
 
 `npm test` controleert dit in lokale PostgreSQL. Live werking vereist het script
 en een eigen handmatige test; de lokale browsercontrole gebruikt gesimuleerde API-antwoorden.
+
+## Bestelgeschiedenis
+
+Mijn account toont nu de bestellingen van het goedgekeurde bedrijf, inclusief
+bestellingen van collega's. Het overzicht toont tien bestellingen per pagina,
+nieuwste eerst, met datum/tijd in Europe/Amsterdam, gebruiksdoel, vastgelegde
+bedragen en exacte akkoordverklaring. Vernieuwen haalt actuele gegevens op.
+Het overzicht gebruikt de bestaande tabellen en RLS uit migratie 003; voer
+hiervoor geen migratie opnieuw uit. Directe API-toegang wordt ook gecontroleerd
+op login, bevestigde e-mail, profielstatus en gekoppeld bedrijf.
+
+Downloadgebeurtenissen zijn nog niet aangesloten. Het overzicht geeft daarom
+nog geen gesimuleerde of afgeleide downloads weer. Een bestelling is geen download.

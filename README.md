@@ -60,3 +60,11 @@ Gebruik geen permanente openbare deellinks voor beschermde originelen.
 De backend moet eerst accountstatus en bestaand gebruiksrecht controleren.
 De testapp staat op https://eclectic-bublanina-b08cc8.netlify.app/ via branch
 `initial-image-catalogue`. Nieuwe commits moeten daar eerst worden gedeployd.
+
+## Besteloverzicht
+
+Goedgekeurde gebruikers zien in Mijn account de bestelgeschiedenis van hun
+bedrijf, met prijs-/btwsnapshots en de bewaarde akkoordverklaring.
+`GET /api/orders/history?page=1` levert een beveiligd, gepagineerd overzicht.
+Nieuwe SQL is hiervoor niet nodig nadat migratie 003 is uitgevoerd.
+Downloadgeschiedenis volgt bij het aansluiten van echte downloadgebeurtenissen.

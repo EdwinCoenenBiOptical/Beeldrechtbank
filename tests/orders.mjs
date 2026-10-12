@@ -32,6 +32,10 @@ test('test orders require consent and preserve snapshots and reusable company ri
  await db.exec('reset role');await db.query('update public.company_prices set amount_cents=102 where purpose_id=$1',[p]);
  await auth(u);await assert.rejects(db.query("select public.place_test_order('NVH-0002',$1,$2,$3,$4,true)",[p,small.agreement_id,small.amount_cents,small.agreement_text]),/QUOTE_CHANGED/);
  await db.exec('reset role');await db.query("update public.profiles set status='suspended' where id=$1",[u]);await auth(u);await assert.rejects(queryQuote(),/APPROVAL_REQUIRED/);assert.equal((await db.query('select * from public.orders')).rows.length,0);
+ await db.exec('reset role');
+ const foreignCompany=(await db.query("insert into public.companies(name,kvk_number) values('Andere redactie','12345678') returning id")).rows[0].id;
+ await db.query("update public.profiles set company_id=$1 where id=$2",[foreignCompany,colleague]);
+ await auth(colleague);assert.equal((await db.query('select * from public.orders')).rows.length,0);assert.equal((await db.query('select * from public.order_items')).rows.length,0);assert.equal((await db.query('select * from public.usage_rights')).rows.length,0);
  await db.exec('reset role;set role anon');await assert.rejects(queryQuote(),/permission denied/);
  }finally{await db.close()}
 });
