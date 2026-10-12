@@ -68,3 +68,10 @@ bedrijf, met prijs-/btwsnapshots en de bewaarde akkoordverklaring.
 `GET /api/orders/history?page=1` levert een beveiligd, gepagineerd overzicht.
 Nieuwe SQL is hiervoor niet nodig nadat migratie 003 is uitgevoerd.
 Downloadgeschiedenis volgt bij het aansluiten van echte downloadgebeurtenissen.
+
+## OneDrive-verbinding
+
+De beheerder kan nu OneDrive Persoonlijk verbinden en het vaste testbestand
+controleren. Zie [de verbindingshandleiding](database/ONEDRIVE.md) en migratie 004.
+Microsoft-tokens blijven versleuteld op de server. Echte downloads zijn nog niet
+geactiveerd; testbestellingen blijven zonder factuur of origineel bestand.
