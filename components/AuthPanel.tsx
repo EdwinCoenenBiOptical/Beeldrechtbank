@@ -6,7 +6,7 @@ type Mode = 'inloggen'|'registreren'|'herstellen'|'reset';
 export function AuthPanel({mode}:{mode:Mode}) {
   const [busy,setBusy]=useState(false),[message,setMessage]=useState(''),[error,setError]=useState('');
   const configured = !!supabaseConfig();
-  useEffect(()=>{setMessage('');setError(new URLSearchParams(location.search).has('auth_error')?'De bevestigingslink is ongeldig of verlopen. Probeer opnieuw in te loggen of vraag een nieuwe bevestigingsmail aan.':'');},[mode]);
+  useEffect(()=>{setMessage('');setError(new URLSearchParams(location.search).has('auth_error')?'Automatisch inloggen is niet gelukt. Je e-mailadres kan al bevestigd zijn. Probeer hieronder in te loggen; lukt dat niet, vraag een nieuwe bevestigingsmail aan.':'');},[mode]);
   async function submit(event:FormEvent<HTMLFormElement>){
     event.preventDefault(); setError(''); setMessage('');setBusy(true);
     const form=new FormData(event.currentTarget);

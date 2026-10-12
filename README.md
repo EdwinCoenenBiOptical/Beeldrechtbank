@@ -91,3 +91,11 @@ rechtbanktekeningen@nicolevandenhout.nl. De code en wachtrij zijn voorbereid;
 maildienst, afzenderverificatie, server-only variabelen en webhook/periodieke job
 moeten nog worden ingesteld. Zie [de mailhandleiding](database/REGISTRATION_EMAIL.md).
 Er zijn hiervoor nog geen live e-mails verstuurd.
+
+## Beheerscherm voor aanmeldingen
+
+Het bestaande beheeraccount kan nieuwe aanvragen bekijken, aan een KvK-gekoppeld
+bedrijf koppelen en goedkeuren/afwijzen. Hiervoor is migratie 007 nodig; de
+geparkeerde notificatiemodule (006) hoeft niet te worden ingesteld.
+Zie [de beheerhandleiding](database/ADMIN_APPLICATIONS.md). Wijzigingen worden
+lokaal getest en per afgeronde werkstap gebundeld om deployments te beperken.

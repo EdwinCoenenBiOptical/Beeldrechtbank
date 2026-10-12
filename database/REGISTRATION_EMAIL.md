@@ -6,6 +6,10 @@ naam, e-mailadres, bedrijfsnaam en KvK-nummer, nooit wachtwoorden of tokens.
 Het betreft een nieuwe aanvraag; e-mailbevestiging en jouw goedkeuring blijven
 aparte stappen. Bestaande accounts worden niet achteraf gemeld.
 
+De notificatiemodule is voorlopig geparkeerd en staat standaard uit. Activering
+vereist later expliciet `REGISTRATION_NOTIFICATIONS_ENABLED=true`. Beoordeel dan
+eventuele al aanwezige wachtrij-items voordat je de worker activeert.
+
 ## Nog benodigd voordat mail werkt
 
 1. Een maildienst. De code gebruikt Resend; kies het gratis abonnement en blijf

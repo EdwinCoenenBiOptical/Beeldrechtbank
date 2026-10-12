@@ -2,6 +2,7 @@ import {createClient} from '@supabase/supabase-js';
 import {validJobSecret,deliverRegistration} from '../../../../lib/notifications/registration.mjs';
 const headers={'Cache-Control':'private, no-store'};
 export async function POST(request:Request){
+ if(process.env.REGISTRATION_NOTIFICATIONS_ENABLED!=='true')return Response.json({error:'Notificatiemail is uitgeschakeld.'},{status:503,headers});
  const secret=process.env.NOTIFICATION_JOB_SECRET;
  if(!validJobSecret(request.headers.get('x-notification-secret'),secret))return Response.json({error:'Niet toegestaan.'},{status:401,headers});
  const url=process.env.NEXT_PUBLIC_SUPABASE_URL,key=process.env.SUPABASE_SECRET_KEY||process.env.SUPABASE_SERVICE_ROLE_KEY;
