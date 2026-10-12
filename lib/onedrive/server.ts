@@ -46,15 +46,19 @@ export async function graphMetadata(accessToken:string):Promise<Metadata>{
  if(typeof account.id!=='string'||typeof file.id!=='string'||typeof file.parentReference?.driveId!=='string'||!file.file||file.file.mimeType!=='image/jpeg'||!Number.isSafeInteger(file.size)||file.size<1)throw Error('FILE_UNAVAILABLE');
  return {accountName:account.displayName||'Microsoft-account',accountId:account.id,driveId:file.parentReference.driveId,itemId:file.id,fileName:file.name,size:file.size,path:filePath,verifiedAt:new Date().toISOString()};
 }
-export async function testConnection(client:Awaited<ReturnType<typeof serverClient>>){
+export async function currentConnection(client:Awaited<ReturnType<typeof serverClient>>){
  const saved=await readConnection(client);if(!saved)throw Error('NOT_CONNECTED');
  let tokens:Tokens=open(saved.encrypted_tokens,connectionConfig().secret,'tokens');
  if(typeof tokens.accessToken!=='string'||typeof tokens.refreshToken!=='string'||!Number.isFinite(tokens.expiresAt))throw Error('RECONNECT_REQUIRED');
  let revision=saved.revision;
  if(tokens.expiresAt<Date.now()+60000){tokens=await tokensFromMicrosoft(new URLSearchParams({grant_type:'refresh_token',refresh_token:tokens.refreshToken,scope:scopes}),tokens.refreshToken);revision=await saveConnection(client,tokens,saved.metadata,revision);}
+ return {tokens,metadata:saved.metadata,revision};
+}
+export async function testConnection(client:Awaited<ReturnType<typeof serverClient>>){
+ const {tokens,metadata:previous,revision}=await currentConnection(client);
  const metadata=await graphMetadata(tokens.accessToken);
  // A refreshed connection must still point to the original owner's Microsoft account.
- if(metadata.accountId!==saved.metadata.accountId)throw Error('ACCOUNT_CHANGED');
+ if(metadata.accountId!==previous.accountId)throw Error('ACCOUNT_CHANGED');
  await saveConnection(client,tokens,metadata,revision);return metadata;
 }
 export function publicError(error:unknown){

@@ -63,3 +63,6 @@ productiedownload moet echte en testrechten afzonderlijk controleren.
 toegang en revisieconflicten lokaal. De browsercontrole gebruikt gesimuleerde
 statussen; echte OAuth, tokenvernieuwing en het testbestand moeten op Netlify
 met Nicole worden geverifieerd. Geen geheimen nodig voor de lokale tests.
+
+Een beheerderstest voor het ophalen van één bestand is inmiddels toegevoegd.
+Zie [TEST_DOWNLOADS.md](TEST_DOWNLOADS.md). Deze activeert geen klantdownloads.

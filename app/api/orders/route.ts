@@ -12,7 +12,8 @@ async function run(body:Record<string,unknown>,confirm:boolean){
   const args={p_drawing_key:body.drawing_key,p_purpose_id:body.purpose_id};
   const {data,error}=confirm?await client.rpc('place_test_order',{...args,p_agreement_id:body.agreement_id,p_expected_amount_cents:body.expected_amount_cents,p_expected_agreement_text:body.expected_agreement_text,p_accepted:true}):await client.rpc('test_order_quote',args);
   if(error){const key=Object.keys(messages).find(k=>error.message.includes(k));return fail(key?messages[key]:'De bestelbevestiging is nog niet beschikbaar. Probeer later opnieuw.',key==='QUOTE_CHANGED'?409:key==='APPROVAL_REQUIRED'?403:key?400:503);}
-  return Response.json(data,{headers});
+  const {data:admin}=await client.rpc('is_onedrive_admin');
+  return Response.json({...data,can_test_download:admin===true&&data?.owned===true&&data?.is_test===true&&body.drawing_key==='NVH-0001'},{headers});
  }catch{return fail('De bestelservice is tijdelijk niet bereikbaar.',503)}
 }
 export async function GET(request:Request){return run(Object.fromEntries(new URL(request.url).searchParams),false)}

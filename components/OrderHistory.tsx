@@ -1,4 +1,5 @@
 'use client';
+import {DownloadHistory} from './DownloadHistory';
 import {useEffect,useState} from 'react';
 type Item={id:string;drawing_title_snapshot:string;purpose_name_snapshot:string;amount_cents:number;vat_percent:number;vat_cents:number;total_cents:number;currency:string;agreement_text_snapshot:string};
 type Order={id:string;order_number:number;accepted_at:string;is_test:boolean;ordered_by_you:boolean;order_items:Item[]};
@@ -20,6 +21,6 @@ export function OrderHistory(){
  {order.order_items.map(item=><div className="history-item" key={item.id}><h4>{item.drawing_title_snapshot}</h4><p>{item.purpose_name_snapshot} · Herhaald gebruik door hetzelfde bedrijf</p><dl className="order-totals"><div><dt>Exclusief btw</dt><dd>{money(item.amount_cents,item.currency)}</dd></div><div><dt>Btw ({item.vat_percent}%)</dt><dd>{money(item.vat_cents,item.currency)}</dd></div><div><dt>Totaal inclusief btw</dt><dd><strong>{money(item.total_cents,item.currency)}</strong></dd></div></dl><details><summary>Bekijk de akkoordverklaring</summary><p>{item.agreement_text_snapshot}</p></details></div>)}
  {order.is_test&&<p className="notice">Testbestelling · Er wordt geen factuur verstuurd.</p>}</article>)}
  {history&&(page>1||history.has_more)&&<div className="history-pagination"><button className="secondary" disabled={page===1||busy} onClick={()=>setPage(p=>p-1)}>Vorige</button><span>Pagina {page}</span><button className="secondary" disabled={!history.has_more||busy} onClick={()=>setPage(p=>p+1)}>Volgende</button></div>}
- <h3>Downloadgeschiedenis</h3><p className="status">Originele bestanden downloaden is nog niet beschikbaar. Zodra dit is aangesloten, verschijnen je downloads hier.</p>
+ <DownloadHistory/>
  </section>
 }

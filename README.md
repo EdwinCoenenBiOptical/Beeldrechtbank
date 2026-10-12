@@ -33,7 +33,7 @@ databasehandleiding. Testbestellingen met expliciet akkoord, 21% btw en bewaarde
 zijn toegevoegd. Voer `003_test_orders.sql` uit om dit te proberen. Alle
 bestellingen zijn voorlopig testbestellingen, zonder factuur of origineel bestand.
 Vervolgens sluiten we OneDrive-downloads en het beheerscherm aan.
-Er is nog geen beschermde download beschikbaar. De gebruiker heeft live
+Klantdownloads zijn nog niet beschikbaar; er is nu een afzonderlijke beheerderstest. De gebruiker heeft live
 registratie, e-mailbevestiging en goedkeuring in de testapp doorlopen. De gebruiker heeft ook de live bedrijfstarieven gecontroleerd. De nieuwe
 testbestelstap vereist nog migratie 003 en een eigen live test.
 
@@ -73,5 +73,13 @@ Downloadgeschiedenis volgt bij het aansluiten van echte downloadgebeurtenissen.
 
 De beheerder kan nu OneDrive Persoonlijk verbinden en het vaste testbestand
 controleren. Zie [de verbindingshandleiding](database/ONEDRIVE.md) en migratie 004.
-Microsoft-tokens blijven versleuteld op de server. Echte downloads zijn nog niet
-geactiveerd; testbestellingen blijven zonder factuur of origineel bestand.
+Microsoft-tokens blijven versleuteld op de server. Klantdownloads zijn nog niet
+geactiveerd; testbestellingen veroorzaken geen factuur.
+
+## Testdownload en downloadgeschiedenis
+
+De beheerder kan nu, na migratie 005, het gekoppelde JPEG-testbestand downloaden
+bij een bestaand testgebruiksrecht voor NVH-0001. Downloadregistratie blijft apart
+van bestellingen; herhalen maakt geen extra bestelling. Zie
+[de testdownloadhandleiding](database/TEST_DOWNLOADS.md). Klantdownloads blijven
+uitgeschakeld; deze fase is uitsluitend een beheerderstest met één bestand.
