@@ -1,0 +1,33 @@
+{
+  "name": "beeldrechtbank",
+  "version": "1.0.0",
+  "description": "Beeldrechtbank voor redacties",
+  "scripts": {
+    "dev": "next dev --hostname 0.0.0.0",
+    "build": "next build",
+    "start": "next start --hostname 0.0.0.0",
+    "typecheck": "tsc --noEmit"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/EdwinCoenenBiOptical/Beeldrechtbank.git"
+  },
+  "keywords": [],
+  "author": "",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/EdwinCoenenBiOptical/Beeldrechtbank/issues"
+  },
+  "homepage": "https://github.com/EdwinCoenenBiOptical/Beeldrechtbank#readme",
+  "private": true,
+  "dependencies": {
+    "next": "^16.4.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "@types/react": "^19.3.0",
+    "typescript": "^7.0.2"
+  }
+}
