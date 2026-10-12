@@ -132,3 +132,26 @@ op login, bevestigde e-mail, profielstatus en gekoppeld bedrijf.
 
 Downloadgebeurtenissen zijn nog niet aangesloten. Het overzicht geeft daarom
 nog geen gesimuleerde of afgeleide downloads weer. Een bestelling is geen download.
+
+## Personen koppelen aan bedrijven
+
+Voer migratie `008_company_assignment.sql` uit na migratie 007. Migratie 006
+voor notificaties is hiervoor niet nodig en blijft geparkeerd.
+
+Open als beheerder Mijn account → Beheer. Kies de status van de persoon,
+selecteer een bestaand bedrijf (zoek op naam of KvK), of kies Nieuw bedrijf en
+vul naam en achtcijferig KvK-nummer in. Het klantnummer ontstaat automatisch.
+Controleer de bevoegdheid van de persoon en vink de controle aan.
+
+- **Bedrijfskoppeling opslaan** wijzigt uitsluitend het gekoppelde bedrijf;
+  de status pending/approved/rejected/suspended blijft behouden.
+- **Koppelen en goedkeuren** koppelt het gekozen bedrijf en keurt de aanvraag
+  goed. E-mailbevestiging is vereist.
+- Bij een afwijkende aanvraag of bedrijfswissel is een reden verplicht.
+
+Een persoon heeft één `profiles.company_id`; meerdere personen mogen hetzelfde
+bedrijf hebben. De oorspronkelijke aanvraag blijft bewaard. De beheerlog bewaart
+oude/nieuwe koppeling, reden en beoordelaar. Bestaande bestellingen, prijzen en
+gebruiksrechten worden niet naar het nieuwe bedrijf verhuisd. Een goedgekeurde
+persoon ziet na de wijziging alleen de gegevens van het huidige bedrijf.
+Gelijktijdig gewijzigde persoonsgegevens geven een melding om te vernieuwen.
