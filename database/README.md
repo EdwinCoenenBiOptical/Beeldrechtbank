@@ -155,3 +155,25 @@ oude/nieuwe koppeling, reden en beoordelaar. Bestaande bestellingen, prijzen en
 gebruiksrechten worden niet naar het nieuwe bedrijf verhuisd. Een goedgekeurde
 persoon ziet na de wijziging alleen de gegevens van het huidige bedrijf.
 Gelijktijdig gewijzigde persoonsgegevens geven een melding om te vernieuwen.
+
+## Testdownload voor medewerkers
+
+Migratie `009_company_downloads.sql` vereist 001–005, maar geen mailmigratie.
+Goedgekeurde medewerkers met bevestigde e-mail en een bestaand bedrijfsrecht
+kunnen NVH-0001 downloaden. Elke aangeboden download wordt op hun eigen account
+vastgelegd; er ontstaat geen nieuwe bestelling. Andere tekeningen blijven buiten
+deze test. OneDrive verbinden en beheren blijft uitsluitend voor beheerders.
+
+Zet in Netlify **Production** de geheime servervariabele `SUPABASE_SECRET_KEY`
+(Supabase → Project Settings → API Keys → Secret keys, `sb_secret_…`). Markeer
+Contains secret values, zorg dat Functions toegang heeft en gebruik geen
+NEXT_PUBLIC-prefix. Deel deze sleutel niet in chat of broncode. De app gebruikt
+de sleutel alleen op de server om de versleutelde OneDrive-verbinding te lezen,
+tokens te verversen en aangeboden downloads te registreren. Hiervoor hoeft de
+notificatiefeature niet ingeschakeld te worden.
+
+Na SQL/configuratie en de deployment: download als Pietje tweemaal. Verwacht één
+bestaande bestelling en twee nieuwe downloadgebeurtenissen op naam van Pietje.
+Edwin ziet deze als downloads door een collega. Een account zonder recht, zonder
+e-mailbevestiging, opgeschort of gekoppeld aan een ander bedrijf heeft geen toegang.
+De server controleert het recht vóór het ophalen én opnieuw vóór het aanbieden.

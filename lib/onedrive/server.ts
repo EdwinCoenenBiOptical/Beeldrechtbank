@@ -1,3 +1,4 @@
+import {SupabaseClient} from '@supabase/supabase-js';
 import {serverClient} from '../supabase/server';
 import {open,seal} from './security.mjs';
 export const oauthCookie='br_onedrive_oauth';
@@ -22,9 +23,9 @@ export function sameOrigin(request:Request){const origin=request.headers.get('or
 type Tokens={accessToken:string;refreshToken:string;expiresAt:number};
 export type Metadata={accountName:string;accountId:string;driveId:string;itemId:string;fileName:string;size:number;path:string;verifiedAt:string};
 type Connection={encrypted_tokens:string;metadata:Metadata;revision:number;connected_at:string};
-export async function readConnection(client:Awaited<ReturnType<typeof serverClient>>){const {data,error}=await client.rpc('read_onedrive_connection');if(error)throw Error('DATABASE_REQUIRED');return data as Connection|null}
-export async function saveConnection(client:Awaited<ReturnType<typeof serverClient>>,tokens:Tokens,metadata:Metadata,revision:number){
- const {data,error}=await client.rpc('save_onedrive_connection',{p_encrypted_tokens:seal(tokens,connectionConfig().secret,'tokens'),p_metadata:metadata,p_expected_revision:revision});
+export async function readConnection(client:SupabaseClient,server=false){const {data,error}=await client.rpc(server?'server_read_onedrive_connection':'read_onedrive_connection');if(error)throw Error('DATABASE_REQUIRED');return data as Connection|null}
+export async function saveConnection(client:SupabaseClient,tokens:Tokens,metadata:Metadata,revision:number,server=false){
+ const {data,error}=await client.rpc(server?'server_save_onedrive_connection':'save_onedrive_connection',{p_encrypted_tokens:seal(tokens,connectionConfig().secret,'tokens'),p_metadata:metadata,p_expected_revision:revision});
  if(error)throw Error('SAVE_FAILED');return Number(data);
 }
 export async function tokensFromMicrosoft(body:URLSearchParams,oldRefresh?:string):Promise<Tokens>{
@@ -46,15 +47,15 @@ export async function graphMetadata(accessToken:string):Promise<Metadata>{
  if(typeof account.id!=='string'||typeof file.id!=='string'||typeof file.parentReference?.driveId!=='string'||!file.file||file.file.mimeType!=='image/jpeg'||!Number.isSafeInteger(file.size)||file.size<1)throw Error('FILE_UNAVAILABLE');
  return {accountName:account.displayName||'Microsoft-account',accountId:account.id,driveId:file.parentReference.driveId,itemId:file.id,fileName:file.name,size:file.size,path:filePath,verifiedAt:new Date().toISOString()};
 }
-export async function currentConnection(client:Awaited<ReturnType<typeof serverClient>>){
- const saved=await readConnection(client);if(!saved)throw Error('NOT_CONNECTED');
+export async function currentConnection(client:SupabaseClient,server=false){
+ const saved=await readConnection(client,server);if(!saved)throw Error('NOT_CONNECTED');
  let tokens:Tokens=open(saved.encrypted_tokens,connectionConfig().secret,'tokens');
  if(typeof tokens.accessToken!=='string'||typeof tokens.refreshToken!=='string'||!Number.isFinite(tokens.expiresAt))throw Error('RECONNECT_REQUIRED');
  let revision=saved.revision;
- if(tokens.expiresAt<Date.now()+60000){tokens=await tokensFromMicrosoft(new URLSearchParams({grant_type:'refresh_token',refresh_token:tokens.refreshToken,scope:scopes}),tokens.refreshToken);revision=await saveConnection(client,tokens,saved.metadata,revision);}
+ if(tokens.expiresAt<Date.now()+60000){tokens=await tokensFromMicrosoft(new URLSearchParams({grant_type:'refresh_token',refresh_token:tokens.refreshToken,scope:scopes}),tokens.refreshToken);revision=await saveConnection(client,tokens,saved.metadata,revision,server);}
  return {tokens,metadata:saved.metadata,revision};
 }
-export async function testConnection(client:Awaited<ReturnType<typeof serverClient>>){
+export async function testConnection(client:SupabaseClient){
  const {tokens,metadata:previous,revision}=await currentConnection(client);
  const metadata=await graphMetadata(tokens.accessToken);
  // A refreshed connection must still point to the original owner's Microsoft account.
