@@ -1,0 +1,3 @@
+import {moneybirdAdmin,apiError,headers} from '../../../../../../lib/moneybird/server';
+import {connectionConfig,readOAuthConnection} from '../../../../../../lib/moneybird/connection';
+export async function GET(){try{const {user}=await moneybirdAdmin();let config;try{config=connectionConfig()}catch{return Response.json({configured:false,connected:false},{headers})}const saved=await readOAuthConnection(user.id);return Response.json({configured:true,connected:!!saved?.encrypted_tokens&&!saved.reconnect_required&&saved.administration_id===config.administrationId&&saved.scope===config.scope,administration_id:config.administrationId,administration_name:saved?.administration_name||null,connected_at:saved?.connected_at||null},{headers})}catch(error){return apiError(error)}}
