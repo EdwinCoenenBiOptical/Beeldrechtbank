@@ -11,3 +11,5 @@ select{max-width:100%}.checkfield{margin:18px 0}.pagehead p{line-height:1.7}.sta
 .onedrive-panel{margin:30px 0}.onedrive-panel form{display:inline-block;margin:15px 10px 0 0}.onedrive-panel p{line-height:1.7;overflow-wrap:anywhere}.onedrive-panel p[role=alert]{color:#923d30}
 
 .admin-application{margin:22px 0}.admin-application .field{max-width:500px}.admin-application .field input{margin-bottom:4px}.admin-application p[role=alert]{color:#923d30}
+
+.moneybird-mapping{margin-top:24px;overflow-wrap:anywhere}.moneybird-mapping form{margin-top:24px}.moneybird-mapping .field{max-width:600px}.moneybird-mapping p[role=alert]{color:#923d30}.moneybird-result{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:16px 0;border-bottom:1px solid var(--line,#ddd)}.moneybird-result p{margin:6px 0}.moneybird-result button{flex-shrink:0}@media(max-width:600px){.moneybird-result{align-items:flex-start;flex-direction:column}.moneybird-mapping .searchbar{flex-wrap:wrap}}

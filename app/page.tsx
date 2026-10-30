@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import {drawings as initialDrawings} from '../lib/drawings';
 import {AuthPanel} from '../components/AuthPanel';
 import {PricingPanel} from '../components/PricingPanel';
+import {MoneybirdCompanies} from '../components/MoneybirdCompanies';
 import {AdminApplications} from '../components/AdminApplications';
 import {AccountPanel} from '../components/AccountPanel';
 type Drawing = typeof initialDrawings[number];
@@ -22,6 +23,7 @@ export default function Home(){
  {(['inloggen','registreren','herstellen'].includes(page))&&<AuthPanel mode={page as 'inloggen'|'registreren'|'herstellen'}/>}
  {page==='account'&&<AccountPanel/>}
  {page==='beheer'&&<AdminApplications/>}
+ {page==='bedrijven'&&<MoneybirdCompanies/>}
  {page==='informatie'&&<section className="pagehead"><div className="eyebrow">Over de beeldbank</div><h2>Een eigen blik op rechtspraak.</h2><p>Iedereen kan rechtbanktekeningen bekijken. Goedgekeurde redactiemedewerkers kunnen beelden downloaden namens hun bedrijf.</p><p>Het tarief wordt bepaald door je bedrijf en het gekozen gebruiksdoel: Online, Print of TV. Binnen dat doel mag hetzelfde bedrijf het beeld herhaaldelijk gebruiken.</p><p>Je bevestigt vooraf de downloadafspraak en dat er een factuur wordt gestuurd.</p><a href="#beeldbank" className="secondary">Naar de beeldbank →</a></section>}
  {page==='tekening'&&!selected&&<section className="pagehead"><h2>Tekening niet gevonden</h2><a href="#beeldbank">Terug naar de beeldbank</a></section>}
  </main><footer><span>© Nicole van den Hout · Alle rechten voorbehouden</span><span>Ontwikkelversie · Voorbeeldgegevens</span></footer>{zoom&&selected&&<dialog open ref={el=>{if(el&&!el.matches(':modal')){el.close();el.showModal()}}} onCancel={()=>setZoom(false)}><button className="close" onClick={()=>setZoom(false)} aria-label="Sluiten">×</button><img src={selected.preview} alt={selected.title}/><p className="credit">© Nicole van den Hout · Previewbeeld</p></dialog>}</>
