@@ -6,7 +6,7 @@ export async function GET(request:Request){
  try{const {client,user}=await moneybirdAdmin();const id=new URL(request.url).searchParams.get('company_id');if(!uuid(id))return fail('Kies een geldig bedrijf.',400);
   const {data,error}=await client.rpc('admin_moneybird_company',{p_company_id:id});
   if(error)return fail(error.message.includes('COMPANY_MISSING')?'Dit bedrijf bestaat niet meer.':'De bedrijfskoppeling is nog niet beschikbaar. Controleer script 010.',error.message.includes('COMPANY_MISSING')?404:503);
-  let configured=false;const config=moneybirdConfig();try{const oauth=connectionConfig(),saved=await readOAuthConnection(user.id);configured=!!saved?.encrypted_tokens&&!saved.reconnect_required&&saved.administration_id===oauth.administrationId&&saved.scope===oauth.scope}catch{}return Response.json({...data,configured,administration_id:moneybirdId(config.administrationId)?config.administrationId:null},{headers});
+  let configured=false;const config=moneybirdConfig();try{const oauth=connectionConfig(),saved=await readOAuthConnection(user.id);configured=!!saved?.encrypted_tokens&&!saved.reconnect_required&&saved.administration_id===oauth.administrationId&&saved.scope===oauth.scope}catch{}const creation=moneybirdId(config.administrationId)&&!data.link?await client.rpc('admin_moneybird_contact_creation',{p_company_id:id,p_administration_id:config.administrationId}):{data:null,error:null};return Response.json({...data,contact_creation:creation.data,can_create:configured&&!data.link&&!creation.error,creation_setup_required:!data.link&&!!creation.error,configured,administration_id:moneybirdId(config.administrationId)?config.administrationId:null},{headers});
  }catch(error){return apiError(error)}
 }
 export async function POST(request:Request){

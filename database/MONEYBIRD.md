@@ -1,7 +1,9 @@
 # Moneybird via OAuth2: bedrijven en contactpersonen koppelen
 
 De app leest contacten en bewaart een gecontroleerde koppeling op bedrijfsniveau.
-Er worden geen Moneybird-contacten of facturen aangemaakt, gewijzigd of verstuurd.
+Na controle en expliciete beheerbevestiging kan een ontbrekend contact worden
+aangemaakt. Bestaande Moneybird-contacten worden niet gewijzigd en er worden
+geen facturen aangemaakt of verstuurd.
 Testbestellingen en downloads blijven ongewijzigd. Er is geen fallback naar een
 persoonlijke API-token.
 
@@ -12,8 +14,9 @@ Moneybird documenteert `sales_invoices`, `documents`, `estimates`, `bank`,
 kan toegang tot contacten geven. Wij vragen expliciet alleen `sales_invoices`.
 De aangeleverde documentatie noemt geen aparte OAuth contacts- of alleen-lezen-scope.
 Dit is dus GEEN garantie dat de token zelf alleen kan lezen; bij uitlekken gelden de
-Moneybird-rechten van de token. Onze server heeft uitsluitend vaste lees-endpoints
-voor contacten plus de administratiecontrole bij OAuth. Bank/documenten/instellingen
+Moneybird-rechten van de token. Onze server heeft vaste lees-endpoints
+voor contacten, de administratiecontrole bij OAuth en één gerichte POST naar
+contacts.json voor bevestigde klantaanmaak. Bank/documenten/instellingen
 worden niet aangevraagd. Nicole moet de rechten controleren op het Moneybird-
 toestemmingsscherm voordat zij akkoord gaat. Klanten hebben geen Moneybird-toegang.
 
@@ -55,7 +58,8 @@ toestemmingsscherm voordat zij akkoord gaat. Klanten hebben geen Moneybird-toega
    Deel Client Secret, encryptiesleutel en tokens niet in chat, CSV of screenshots.
 
 4. Voer migraties `010_moneybird_contacts.sql` en `011_moneybird_oauth.sql` in die
-   volgorde uit in Supabase SQL Editor. Ze vereisen account-/beheermigraties 001,
+   volgorde uit in Supabase SQL Editor. Voer voor klantaanmaak ook
+   `012_moneybird_contact_creation.sql` uit nadat 010 en 011 zijn toegepast. Ze vereisen account-/beheermigraties 001,
    004, 007; de bestaande bedrijvenzoeker gebruikt 008. Mailmigratie 006 is niet nodig.
 5. Deploy pas nadat SQL en variabelen klaarstaan om een extra deployment te vermijden.
 
@@ -99,8 +103,11 @@ contact. Ontbrekende gegevens blijven zichtbaar als ontbrekend.
 Bevestig en sla op. Bij ontbrekend/afwijkend KvK of vervanging van de bestaande
 contact-/administratiekoppeling is een reden verplicht. **Gekoppeld contact opnieuw
 controleren** haalt actuele gegevens op; wijzigingen worden bewust opnieuw
-opgeslagen, er is geen automatische synchronisatie. Ontbrekende bedrijven maak je
-in deze stap zelf in Moneybird aan. Er is geen externe contact-aanmaak vanuit de app.
+opgeslagen, er is geen automatische synchronisatie. Na zoeken zonder resultaten
+kun je factuuradres, landcode, factuur-e-mailadres en optionele contactnaam
+controleren en de nieuwe klant expliciet laten aanmaken en koppelen. De server
+controleert opnieuw op bestaande KvK-contacten vóór aanmaak. Lees ook
+`MONEYBIRD_CONTACT_CREATION.md` voor herstel na onzekere resultaten.
 
 ## Bewaren en beveiliging
 
@@ -132,3 +139,8 @@ of externe wijzigingen uitgevoerd vanuit deze ontwikkelomgeving.
 
 Bron scopes: door Edwin aangeleverde Moneybird-authenticatiedocumentatie,
 <https://developer.moneybird.com/authentication>.
+
+De klantaanmaak wordt lokaal getest met echte PostgreSQL-transacties en
+gesimuleerde Moneybird-antwoorden: concurrency, bestaande KvK-contacten op latere
+pagina's, verloren responses, herstel zonder tweede POST en validatiefouten.
+Live klantaanmaak blijft een handmatige acceptatietest na deployment.
