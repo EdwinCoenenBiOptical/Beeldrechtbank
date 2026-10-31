@@ -21,10 +21,13 @@ schrijven, verschijnt een fout; er wordt niet automatisch meer toegang gevraagd.
    namens het oorspronkelijke bedrijf. Alleen bestellingen die dit beheeraccount
    zelf heeft geplaatst zijn voor deze proef beschikbaar. Pietjes bestellingen
    worden niet aangeboden. Er is één proefslot per Moneybird-administratie.
-4. Laad de btw-tarieven en omzetcategorieën. Kies het normale Nederlandse 21%-
-   verkooptarief en de juiste omzetcategorie voor de tekeningen.
+4. De factuurinstellingen staan vast: het actieve Nederlandse 21%-verkooptarief
+   en omzetcategorie **Download (rekeningcode 80300)**. De server zoekt de interne
+   Moneybird-IDs erbij; de rekeningcode is niet het API-ID. Er zijn geen keuzelijsten.
+   Bij ontbrekende of dubbelzinnige instellingen wordt aanmaak geblokkeerd.
 5. Klik **Factuurgegevens controleren**. Controleer klant/adres, bedrag en ontvanger.
-   De ontvanger moet exact het e-mailadres zijn van de beheerder die de bestelling
+   Het factuuradres moet landcode NL hebben; downloads zijn uitsluitend voor
+   Nederlandse klanten. De ontvanger moet exact het e-mailadres zijn van de beheerder die de bestelling
    heeft geplaatst; andere ontvangers worden door de server geweigerd.
 6. Bevestig de controle en kies **Conceptfactuur aanmaken**. Dit maakt een echt
    Moneybird-concept aan, zonder verzendopdracht. Prijzen en 21% btw komen uit de
@@ -52,7 +55,7 @@ de app maakt voor een verwijderd vastgelegd concept geen automatische vervanger.
 - Geld wordt in hele centen vergeleken; API-prijzen worden als decimale tekst verstuurd.
 - De actuele Moneybird-contactkoppeling en het KvK/adres worden voor het concept
   opnieuw gecontroleerd; alleen actieve Nederlandse verkoop-btw van 21% en een
-  omzetrekening uit Moneybird kunnen worden gekozen.
+  omzetrekening met code 80300 uit Moneybird worden automatisch gekoppeld.
 - Het concept moet exact dezelfde referentie, klant, persoon, valuta, regels,
   prijzen, btw-codes, omzetcodes en totalen bevatten. Een wijziging blokkeert verzending.
 - De gecontroleerde conceptversie heeft een hash. Vlak voor verzenden wordt opnieuw
@@ -106,3 +109,7 @@ bevestigingen, bedragen, ontvanger, link, credit-herinnering en verdwijnen van d
 verzendknop. Echte lokale HTTP-checks weigeren ontbrekende login en Origin.
 Live Moneybird-aanmaak/verzending wordt pas met de bovenstaande handmatige proef
 uitgevoerd; er zijn tijdens de ontwikkeling geen facturen aangemaakt of verstuurd.
+
+De vaste omzetcode wordt ook vóór verzending gecontroleerd. Een eerder concept
+met een andere omzetcategorie wordt niet stilzwijgend verstuurd of herschreven.
+De invoering van vaste instellingen vereist geen nieuwe migratie na 013.
