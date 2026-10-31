@@ -3,7 +3,8 @@
 De app leest contacten en bewaart een gecontroleerde koppeling op bedrijfsniveau.
 Na controle en expliciete beheerbevestiging kan een ontbrekend contact worden
 aangemaakt. Bestaande Moneybird-contacten worden niet gewijzigd en er worden
-geen facturen aangemaakt of verstuurd.
+geen facturen automatisch aangemaakt of verstuurd. Een afzonderlijke, expliciet
+bevestigde factuurproef staat beschreven in `MONEYBIRD_INVOICE_TRIAL.md`.
 Testbestellingen en downloads blijven ongewijzigd. Er is geen fallback naar een
 persoonlijke API-token.
 
@@ -16,7 +17,9 @@ De aangeleverde documentatie noemt geen aparte OAuth contacts- of alleen-lezen-s
 Dit is dus GEEN garantie dat de token zelf alleen kan lezen; bij uitlekken gelden de
 Moneybird-rechten van de token. Onze server heeft vaste lees-endpoints
 voor contacten, de administratiecontrole bij OAuth en één gerichte POST naar
-contacts.json voor bevestigde klantaanmaak. Bank/documenten/instellingen
+contacts.json voor bevestigde klantaanmaak. De aparte factuurproef leest
+btw-/omzetinstellingen en maakt na afzonderlijke beheerbevestiging één concept en
+verzendopdracht; zie `MONEYBIRD_INVOICE_TRIAL.md`. Bank/documenten/instellingen
 worden niet aangevraagd. Nicole moet de rechten controleren op het Moneybird-
 toestemmingsscherm voordat zij akkoord gaat. Klanten hebben geen Moneybird-toegang.
 

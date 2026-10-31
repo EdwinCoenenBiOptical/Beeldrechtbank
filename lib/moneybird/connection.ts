@@ -2,6 +2,7 @@ import 'server-only';
 import {randomUUID} from 'node:crypto';
 import {serviceClient} from '../supabase/service';
 import {createMoneybirdReader} from './contacts.mjs';
+import {createMoneybirdInvoices} from './invoices.mjs';
 import {createMoneybirdContactWriter} from './create-contact.mjs';
 import {oauthConfig,exchangeTokens} from './oauth.mjs';
 import {openTokens,sealTokens,validateEncryptionKey} from './security.mjs';
@@ -32,3 +33,7 @@ async function connectedCredentials(actor:string){
 
 export async function connectedReader(actor:string){return createMoneybirdReader(await connectedCredentials(actor))}
 export async function connectedContactCreator(actor:string){return createMoneybirdContactWriter(await connectedCredentials(actor))}
+
+export async function connectedInvoices(actor:string){return createMoneybirdInvoices(await connectedCredentials(actor))}
+
+export async function connectedBilling(actor:string){const credentials=await connectedCredentials(actor);return {invoices:createMoneybirdInvoices(credentials),contacts:createMoneybirdReader(credentials)}}

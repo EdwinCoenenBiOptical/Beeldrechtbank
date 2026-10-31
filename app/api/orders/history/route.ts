@@ -15,6 +15,8 @@ export async function GET(request:Request){
    order_items(id,drawing_title_snapshot,purpose_name_snapshot,amount_cents,vat_percent,vat_cents,total_cents,currency,agreement_text_snapshot)`,{count:'exact'})
    .eq('company_id',profile.company_id).order('accepted_at',{ascending:false}).order('id',{ascending:false}).range((page-1)*size,page*size-1);
   if(error||!orders)return fail('De bestelgeschiedenis kon niet worden geladen. Probeer opnieuw.',503);
-  return Response.json({orders:orders.map(({user_id,...order})=>({...order,ordered_by_you:user_id===user.id})),page,has_more:page*size<(count||0)},{headers});
+  const {data:trials,error:trialError}=orders.length?await client.rpc('company_order_invoice_trials',{p_order_ids:orders.map(o=>o.id)}):{data:[],error:null};
+  const invoiceMap=new Map((Array.isArray(trials)?trials:[]).map((t:any)=>[t.order_id,t]));
+  return Response.json({orders:orders.map(({user_id,...order})=>({...order,ordered_by_you:user_id===user.id,invoice_trial:invoiceMap.get(order.id)||null})),invoice_status_unavailable:!!trialError,page,has_more:page*size<(count||0)},{headers});
  }catch{return fail('De bestelgeschiedenis is tijdelijk niet bereikbaar.',503)}
 }
