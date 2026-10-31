@@ -113,3 +113,24 @@ uitgevoerd; er zijn tijdens de ontwikkeling geen facturen aangemaakt of verstuur
 De vaste omzetcode wordt ook vóór verzending gecontroleerd. Een eerder concept
 met een andere omzetcategorie wordt niet stilzwijgend verstuurd of herschreven.
 De invoering van vaste instellingen vereist geen nieuwe migratie na 013.
+
+## Klantreferentie / PO-nummer
+
+Migratie 014 voegt `public.orders.customer_reference` toe (optioneel, maximaal 100
+tekens, zonder controletekens). De klant vult dit in vóór akkoord. De waarde wordt
+in dezelfde transactie als de bestelling en het gebruiksrecht vastgelegd en blijft
+bij een herhaalde bevestiging/download onveranderd, ook wanneer een collega een
+ander PO-nummer meestuurt. Bestaande orders behouden NULL; er is geen backfill of
+wijzigfunctie na bevestiging.
+
+Voor nieuwe factuurplannen is Moneybird `sales_invoice.reference` exact het
+klantkenmerk. Zonder klantkenmerk gebruiken we `Beeldrechtbank bestelling <nummer>`.
+De UUID-gebaseerde interne proefreferentie blijft afzonderlijk in de private
+ledger staan. Herstel gebruikt de opgeslagen invoice_id of een combinatie van
+klantkenmerk, Moneybird-klant en het unieke bestelnummer in de factuurregels.
+Hetzelfde PO-nummer mag dus bij meerdere bestellingen worden hergebruikt zonder
+ze door elkaar te halen. Onzekere acties worden nog steeds nooit blind herhaald.
+
+Oude factuurplannen/concepten blijven ongewijzigd: hun reeds vastgelegde referentie
+blijft geldig. De proeflimiet van één gekozen bestelling blijft gelden; een nieuwe
+bestelling met een PO maakt niet automatisch een tweede proeffactuur mogelijk.

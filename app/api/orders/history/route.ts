@@ -11,7 +11,7 @@ export async function GET(request:Request){
   const {data:profile,error:profileError}=await client.from('profiles').select('status,company_id').eq('id',user.id).maybeSingle();
   if(profileError||!profile)return fail('Je accountgegevens zijn tijdelijk niet beschikbaar.',503);
   if(!user.email_confirmed_at||profile.status!=='approved'||!profile.company_id)return fail('Je account moet zijn goedgekeurd om de bestelgeschiedenis te bekijken.',403);
-  const {data:orders,error,count}=await client.from('orders').select(`id,order_number,accepted_at,is_test,user_id,
+  const {data:orders,error,count}=await client.from('orders').select(`id,order_number,accepted_at,is_test,user_id,customer_reference,
    order_items(id,drawing_title_snapshot,purpose_name_snapshot,amount_cents,vat_percent,vat_cents,total_cents,currency,agreement_text_snapshot)`,{count:'exact'})
    .eq('company_id',profile.company_id).order('accepted_at',{ascending:false}).order('id',{ascending:false}).range((page-1)*size,page*size-1);
   if(error||!orders)return fail('De bestelgeschiedenis kon niet worden geladen. Probeer opnieuw.',503);

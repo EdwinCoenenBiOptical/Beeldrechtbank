@@ -1,16 +1,18 @@
+import {normalizeCustomerReference} from '../../../lib/orders/reference.mjs';
 import {serverClient} from '../../../lib/supabase/server';
 const headers={'Cache-Control':'private, no-store'};
 const fail=(error:string,status:number)=>Response.json({error},{status,headers});
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const messages:Record<string,string>={APPROVAL_REQUIRED:'Je account moet eerst worden goedgekeurd.',DRAWING_UNAVAILABLE:'Deze tekening is niet beschikbaar om te bestellen.',PURPOSE_UNAVAILABLE:'Dit gebruiksdoel is niet beschikbaar.',PRICE_UNAVAILABLE:'Voor dit gebruiksdoel is geen tarief beschikbaar.',CONSENT_REQUIRED:'Bevestig eerst de akkoordverklaring.',QUOTE_CHANGED:'De prijs of voorwaarden zijn gewijzigd. Vernieuw de pagina en controleer de nieuwe afspraak.'};
+const messages:Record<string,string>={CUSTOMER_REFERENCE_INVALID:'Gebruik maximaal 100 tekens zonder regeleinden voor je referentie / PO-nummer.',APPROVAL_REQUIRED:'Je account moet eerst worden goedgekeurd.',DRAWING_UNAVAILABLE:'Deze tekening is niet beschikbaar om te bestellen.',PURPOSE_UNAVAILABLE:'Dit gebruiksdoel is niet beschikbaar.',PRICE_UNAVAILABLE:'Voor dit gebruiksdoel is geen tarief beschikbaar.',CONSENT_REQUIRED:'Bevestig eerst de akkoordverklaring.',QUOTE_CHANGED:'De prijs of voorwaarden zijn gewijzigd. Vernieuw de pagina en controleer de nieuwe afspraak.'};
 async function run(body:Record<string,unknown>,confirm:boolean){
  if(typeof body.drawing_key!=='string'||!/^NVH-\d{4}$/.test(body.drawing_key)||typeof body.purpose_id!=='string'||!uuid.test(body.purpose_id))return fail('Kies een geldige tekening en gebruiksdoel.',400);
  if(confirm&&(body.accepted!==true||typeof body.agreement_id!=='string'||!uuid.test(body.agreement_id)||!Number.isInteger(body.expected_amount_cents)||Number(body.expected_amount_cents)<0||Number(body.expected_amount_cents)>2147483647||typeof body.expected_agreement_text!=='string'||body.expected_agreement_text.length>20000))return fail('Controleer de bestelling en bevestig de akkoordverklaring.',400);
+ let customerReference=null;try{if(confirm)customerReference=normalizeCustomerReference(body.customer_reference)}catch{return fail(messages.CUSTOMER_REFERENCE_INVALID,400)}
  try{
   const client=await serverClient();const {data:{user},error:authError}=await client.auth.getUser();
   if(authError||!user)return fail('Log opnieuw in.',401);
   const args={p_drawing_key:body.drawing_key,p_purpose_id:body.purpose_id};
-  const {data,error}=confirm?await client.rpc('place_test_order',{...args,p_agreement_id:body.agreement_id,p_expected_amount_cents:body.expected_amount_cents,p_expected_agreement_text:body.expected_agreement_text,p_accepted:true}):await client.rpc('test_order_quote',args);
+  const {data,error}=confirm?await client.rpc('place_test_order',{...args,p_agreement_id:body.agreement_id,p_expected_amount_cents:body.expected_amount_cents,p_expected_agreement_text:body.expected_agreement_text,p_accepted:true,p_customer_reference:customerReference}):await client.rpc('test_order_quote',args);
   if(error){const key=Object.keys(messages).find(k=>error.message.includes(k));return fail(key?messages[key]:'De bestelbevestiging is nog niet beschikbaar. Probeer later opnieuw.',key==='QUOTE_CHANGED'?409:key==='APPROVAL_REQUIRED'?403:key?400:503);}
   const {error:downloadError}=data?.owned===true&&body.drawing_key==='NVH-0001'?await client.rpc('test_download_right',{p_purpose_id:body.purpose_id}):{error:true};
   return Response.json({...data,can_test_download:!downloadError&&data?.owned===true&&data?.is_test===true&&body.drawing_key==='NVH-0001'},{headers});
