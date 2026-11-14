@@ -134,3 +134,42 @@ ze door elkaar te halen. Onzekere acties worden nog steeds nooit blind herhaald.
 Oude factuurplannen/concepten blijven ongewijzigd: hun reeds vastgelegde referentie
 blijft geldig. De proeflimiet van één gekozen bestelling blijft gelden; een nieuwe
 bestelling met een PO maakt niet automatisch een tweede proeffactuur mogelijk.
+
+## Herstel van een bevestigd verwijderd, onverstuurd concept
+
+Migratie 015 voegt een afzonderlijke herstelactie en private herstelhistorie toe.
+Gebruik dit uitsluitend nadat de administratiehouder heeft bevestigd dat alleen
+het onverstuurde concept is verwijderd en geen uitgegeven/verstuurde factuur voor
+de bestelling bestaat. Een normale statuscontrole reset nooit automatisch iets.
+
+1. Voer `015_recover_deleted_invoice_draft.sql` eenmalig uit en deploy de nieuwe app.
+2. Kies de oorspronkelijke proefbestelling en klik **Factuurstatus controleren**.
+3. Alleen bij de fout `INVOICE_MISSING` verschijnt **Verwijderd concept herstellen**.
+4. Bevestig expliciet de verwijdering en het ontbreken van een verstuurde factuur.
+5. Klik **Verwijderd concept gecontroleerd herstellen**. Deze actie doet uitsluitend
+   Moneybird-GETs en een interne hersteltransactie: geen factuur-POST of verzending.
+6. Controleer daarna opnieuw de factuurgegevens en maak bewust een nieuw concept.
+   De afzonderlijke controle en verzendbevestiging blijven verplicht.
+
+De server controleert een echte 404 voor het opgeslagen ID, scant volledig op de
+vaste interne referentie en op het bestelnummer in factuurregels van dezelfde
+Moneybird-klant. Een bestaand concept, gerelateerde/vervangende factuur, API-fout
+of onvolledige scan blokkeert herstel. Deze controle en de handmatige bevestiging
+zijn beide nodig; het ontbreken van één factuur-ID bewijst op zichzelf niets over
+andere facturen. Externe handmatige wijzigingen tijdens API-calls kunnen niet
+atomisch met onze database worden vergrendeld.
+
+De herstel-RPC is service-role-only en controleert opnieuw beheerder, eigen order,
+lease, exact oud factuur-ID, laatst bekende draftstatus en afwezigheid van elke
+historische verzendpoging. `sent_at` en `send_unresolved` moeten leeg/false zijn.
+Ook een afgewezen eerdere verzendpoging vereist conservatief handmatige controle.
+De oude snapshot, oude request en het oude ID blijven bewaard in
+`private.moneybird_invoice_trial_recoveries`; de gebeurtenis staat ook in het
+proef-auditlog. Alleen de verwijderde conceptkoppeling wordt vrijgegeven. Orders,
+gebruiksrechten, PO-nummer en het gekozen proefslot worden niet verwijderd.
+
+Het scherm geeft opgeslagen status expliciet als laatst bekende status weer.
+Versturen wordt pas mogelijk na een verse succesvolle Moneybird-controle en een
+aparte gebruikersbevestiging; na HTML-fouten of een ontbrekend document blijft de
+verzendknop geblokkeerd. De JSON-reader toont hostingfouten leesbaar en adviseert
+bij een onbevestigde mutatie eerst de status te controleren, niet blind te herhalen.
