@@ -1,5 +1,6 @@
 'use client';
 import {useEffect,useState} from 'react';
+import {readApiResponse} from '../lib/http/api-response.mjs';
 import {MoneybirdConnection} from './MoneybirdConnection';
 import {MoneybirdContactCreate,type ContactCreation} from './MoneybirdContactCreate';
 type Company={id:string;name:string;kvk_number:string;customer_number:number};
@@ -7,7 +8,7 @@ type Person={id:string;name:string;email:string};
 type Contact={id:string;name:string;kvk:string;email:string;invoice_email:string;attention:string;address:string;people:Person[]};
 type Link={administration_id:string;contact_id:string;contact_snapshot:Contact;recipient_snapshot:{id:string|null;name:string|null;email:string|null};revision:number;updated_at:string};
 type State={can_create?:boolean;creation_setup_required?:boolean;contact_creation?:ContactCreation|null;company:Company;link:Link|null;configured:boolean;administration_id:string|null};
-async function jsonRequest(url:string,options:RequestInit={}){const response=await fetch(url,{...options,cache:'no-store'});const data=await response.json();if(!response.ok)throw Error(data.error||'De gegevens konden niet worden geladen.');return data}
+async function jsonRequest(url:string,options:RequestInit={}){const response=await fetch(url,{...options,cache:'no-store'});const data=await readApiResponse(response,{mutation:options.method==='POST'});if(!response.ok)throw Error(data.error||'De gegevens konden niet worden geladen.');return data}
 function CompanyMapping({companyId}:{companyId:string}){
  const [state,setState]=useState<State|null>(null),[error,setError]=useState(''),[message,setMessage]=useState(''),[busy,setBusy]=useState(false),[reload,setReload]=useState(0);
  const [query,setQuery]=useState(''),[results,setResults]=useState<Contact[]|null>(null),[searchPage,setSearchPage]=useState(1),[searchQuery,setSearchQuery]=useState(''),[hasMore,setHasMore]=useState(false);

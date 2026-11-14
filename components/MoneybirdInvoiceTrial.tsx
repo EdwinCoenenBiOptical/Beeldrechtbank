@@ -1,11 +1,12 @@
 'use client';
 import {useEffect,useState} from 'react';
+import {readApiResponse} from '../lib/http/api-response.mjs';
 type Order={id:string;order_number:number;company_name_snapshot:string};
 type Plan={customer_reference?:string|null;reference?:string;order_id:string;order_number:number;company_name:string;company_kvk:string;contact_id:string;contact_name:string;contact_address:string;recipient_email:string;tax_rate_name:string;ledger_account_name:string;amount_cents:number;vat_cents:number;total_cents:number;items:{description:string;amount_cents:number}[]};
 type Probe={order_id:string;status:string;invoice_id:string|null;review_hash:string|null;sent_at:string|null;send_unresolved:boolean;request_snapshot:Plan;invoice_snapshot:{invoice_number:string|null;state:string;amount_cents:number;total_cents:number;details:{description:string}[]}|null};
 type Source={order:{id:string;order_number:number;company_name_snapshot:string};buyer_email:string;link:Record<string,unknown>|null;items:{drawing_title_snapshot:string;purpose_name_snapshot:string;amount_cents:number;vat_cents:number;total_cents:number}[]};
 const money=(value:number)=>new Intl.NumberFormat('nl-NL',{style:'currency',currency:'EUR'}).format(value/100);
-async function read(url:string,options:RequestInit={}){const response=await fetch(url,{...options,cache:'no-store'});const data=await response.json();if(!response.ok)throw Error(data.error||'De factuurgegevens konden niet worden geladen.');return data}
+async function read(url:string,options:RequestInit={}){const response=await fetch(url,{...options,cache:'no-store'});const data=await readApiResponse(response,{mutation:options.method==='POST'});if(!response.ok)throw Error(data.error||'De factuurgegevens konden niet worden geladen.');return data}
 export function MoneybirdInvoiceTrial(){
  const [orders,setOrders]=useState<Order[]>([]),[selected,setSelected]=useState(''),[source,setSource]=useState<Source|null>(null),[probe,setProbe]=useState<Probe|null>(null),[adminId,setAdminId]=useState('');
  const [quote,setQuote]=useState<{plan:Plan;plan_hash:string}|null>(null),[createAck,setCreateAck]=useState(false),[sendAck,setSendAck]=useState(false),[busy,setBusy]=useState(false),[loading,setLoading]=useState(true),[error,setError]=useState(''),[message,setMessage]=useState(''),[refresh,setRefresh]=useState(0);
