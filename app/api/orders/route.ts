@@ -1,3 +1,4 @@
+import {dispatchOrderConfirmation} from '../../../lib/mail/server';
 import {normalizeCustomerReference} from '../../../lib/orders/reference.mjs';
 import {serverClient} from '../../../lib/supabase/server';
 const headers={'Cache-Control':'private, no-store'};
@@ -14,8 +15,10 @@ async function run(body:Record<string,unknown>,confirm:boolean){
   const args={p_drawing_key:body.drawing_key,p_purpose_id:body.purpose_id};
   const {data,error}=confirm?await client.rpc('place_test_order',{...args,p_agreement_id:body.agreement_id,p_expected_amount_cents:body.expected_amount_cents,p_expected_agreement_text:body.expected_agreement_text,p_accepted:true,p_customer_reference:customerReference}):await client.rpc('test_order_quote',args);
   if(error){const key=Object.keys(messages).find(k=>error.message.includes(k));return fail(key?messages[key]:'De bestelbevestiging is nog niet beschikbaar. Probeer later opnieuw.',key==='QUOTE_CHANGED'?409:key==='APPROVAL_REQUIRED'?403:key?400:503);}
+  let confirmationStatus: string|null=null;
+  if(confirm&&data?.order_id){try{confirmationStatus=(await dispatchOrderConfirmation(user.id,data.order_id)).status}catch{confirmationStatus='needs_check'}}
   const {error:downloadError}=data?.owned===true&&body.drawing_key==='NVH-0001'?await client.rpc('test_download_right',{p_purpose_id:body.purpose_id}):{error:true};
-  return Response.json({...data,can_test_download:!downloadError&&data?.owned===true&&data?.is_test===true&&body.drawing_key==='NVH-0001'},{headers});
+  return Response.json({...data,confirmation_mail_status:confirmationStatus,can_test_download:!downloadError&&data?.owned===true&&data?.is_test===true&&body.drawing_key==='NVH-0001'},{headers});
  }catch{return fail('De bestelservice is tijdelijk niet bereikbaar.',503)}
 }
 export async function GET(request:Request){return run(Object.fromEntries(new URL(request.url).searchParams),false)}

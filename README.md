@@ -99,3 +99,54 @@ bedrijf koppelen en goedkeuren/afwijzen. Hiervoor is migratie 007 nodig; de
 geparkeerde notificatiemodule (006) hoeft niet te worden ingesteld.
 Zie [de beheerhandleiding](database/ADMIN_APPLICATIONS.md). Wijzigingen worden
 lokaal getest en per afgeronde werkstap gebundeld om deployments te beperken.
+
+### Bestelbevestigingen via Rootnet (script 016)
+
+Deze module verstuurt één bevestiging per nieuwe bestelling vanuit
+`Beeldrechtbank <info@beeldrechtbank.nl>`. Nicole ontvangt een BCC op
+`rechtbanktekeningen@nicolevandenhout.nl`; antwoorden gaan naar datzelfde adres.
+De mail bevat bestelregels, opgeslagen bedragen, 21% btw en de eventuele
+klantreferentie/het PO-nummer. Opnieuw downloaden geeft geen nieuwe mail.
+Facturen en kopieën daarvan blijven volledig bij Moneybird.
+
+**Voorbereid, standaard uitgeschakeld.** Er wordt geen historische mail verstuurd.
+SQL-script `database/migrations/016_order_confirmation_mail.sql` maakt een private
+verzendregistratie en een beheerinstelling die standaard uit staat. Script 006
+(Resend/aanmeldmeldingen) is hiervoor niet nodig en blijft geparkeerd.
+
+Ingebruikname, zodra Rootnet DNS en de mailbox heeft bevestigd:
+
+1. Controleer via de door Rootnet opgegeven webmail zowel ontvangen als verzenden
+   met `info@beeldrechtbank.nl`. Controleer ook dat Nicole mail kan ontvangen.
+2. Voer script 016 uit in Supabase, na de bestaande migraties tot en met 015.
+3. Stel in Netlify uitsluitend server-side variabelen in: `SMTP_HOST=rootnet.email`,
+   `SMTP_PORT=587` (STARTTLS; alternatief 465 met TLS),
+   `SMTP_USER=info@beeldrechtbank.nl`, `SMTP_PASSWORD` met het mailboxwachtwoord.
+   Geen `NEXT_PUBLIC_`-prefix. Deel het wachtwoord niet via chat of Git.
+4. Zet `ORDER_MAIL_ENABLED=true` voor de gecontroleerde test. Dit zet de
+   automatische bestelmail nog niet aan: daarvoor geldt een tweede beheerschakelaar.
+   Laat `APP_URL` op het werkende Netlify-adres staan zolang het eigen webdomein
+   nog niet afzonderlijk is gekoppeld en getest.
+5. Open als beheerder **Bestelbevestigingen** (`/#bestelmails`). Controleer het
+   voorbeeld en stuur bewust één test naar je eigen ingelogde beheerdersadres,
+   met BCC aan Nicole. Hiervoor ontstaat geen bestelling of factuur.
+6. Controleer ontvangst bij beiden, spammap, afzender, antwoordadres en
+   SPF/DKIM-resultaten. Activeer daarna pas automatische bevestigingen in beheer.
+7. Plaats één nieuwe testbestelling met PO-nummer. Controleer beide mails en
+   download opnieuw: er mag geen tweede bevestiging ontstaan.
+
+SMTP-acceptatie betekent dat de server de mail heeft aangenomen, niet dat de
+ontvanger hem daadwerkelijk heeft ontvangen. Bounces komen op de verzendmailbox.
+Een mislukte mail maakt een vastgelegde bestelling niet ongedaan. Beheer toont
+recente verzendstatussen; alleen zekere mislukkingen kunnen handmatig opnieuw
+worden aangeboden. Bij gedeeltelijke acceptatie, een onbekende uitkomst of een
+onderbroken verzending vindt geen automatische herhaling plaats: controleer
+ontvangst en laat Rootnet zo nodig de verzendlogs controleren. Dit voorkomt dat
+onzekerheid stilzwijgend tot dubbele mails leidt.
+
+Pauzeren kan via beheer of met `ORDER_MAIL_ENABLED=false`. De beheerinstelling
+bepaalt of nieuwe bestellingen worden geregistreerd voor verzending; tijdens een
+pauze wordt geen achteraf te versturen stapel opgebouwd. Bestaande wachtende
+registraties blijven zichtbaar. Er is geen periodieke achtergrondwerker: een
+verzending wordt na het vastleggen van de bestelling aangeboden, of expliciet
+vanuit beheer hervat als dat veilig kan.
