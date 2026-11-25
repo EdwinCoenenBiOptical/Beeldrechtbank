@@ -177,7 +177,7 @@ export function CatalogueAdmin() {
       );
     }
   }
-  const batch = overview?.batch,
+  const batch = overview?.batch?.id ? overview.batch : null,
     counts = overview?.counts;
   return (
     <section className="pagehead">

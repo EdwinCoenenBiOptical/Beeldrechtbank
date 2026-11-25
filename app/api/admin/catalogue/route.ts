@@ -1,3 +1,4 @@
+import { normaliseCatalogueStatus } from "../../../../lib/catalogue/status.mjs";
 import {
   moneybirdAdmin,
   originCheck,
@@ -51,7 +52,9 @@ export async function GET(request: Request) {
     if (!Number.isSafeInteger(page) || page < 1 || page > 1000)
       return fail("Ongeldige pagina.", 400);
     return Response.json(
-      await catalogueAction(user.id, "status", { batch_id: batch, page }),
+      normaliseCatalogueStatus(
+        await catalogueAction(user.id, "status", { batch_id: batch, page }),
+      ),
       { headers },
     );
   } catch (e) {

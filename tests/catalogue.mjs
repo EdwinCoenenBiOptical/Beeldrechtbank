@@ -1,3 +1,4 @@
+import { normaliseCatalogueStatus } from "../lib/catalogue/status.mjs";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
@@ -242,6 +243,18 @@ test("catalogue SQL keeps sources/drafts private, blocks premature publication a
     const publicRows = async () =>
       (await db.query("select public.catalogue_public_rows() r")).rows[0].r;
     await db.exec("set role service_role");
+    const empty = await action("status");
+    assert.equal(
+      empty.batch.id,
+      null,
+      "PostgreSQL returns a typed row of nulls before the first import",
+    );
+    assert.equal(
+      normaliseCatalogueStatus(empty).batch,
+      null,
+      "the API must expose an absent import as null",
+    );
+    assert.equal(normaliseCatalogueStatus({ batch: null }).batch, null);
     await assert.rejects(
       action(
         "stage",
@@ -266,6 +279,7 @@ test("catalogue SQL keeps sources/drafts private, blocks premature publication a
     assert.equal((await publicRows()).active, false);
     await assert.rejects(action("publish", { batch_id: batch }), /NOT_READY/);
     let state = await action("status", { batch_id: batch });
+    assert.equal(normaliseCatalogueStatus(state).batch.id, batch);
     assert.equal(state.counts.requested, 2);
     assert.equal(state.counts.pending, 2);
     const ids = await action("next", { batch_id: batch });
