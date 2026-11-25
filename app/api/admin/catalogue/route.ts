@@ -1,3 +1,4 @@
+import { PreviewServiceError } from "../../../../lib/catalogue/failures.mjs";
 import { normaliseCatalogueStatus } from "../../../../lib/catalogue/status.mjs";
 import {
   moneybirdAdmin,
@@ -19,6 +20,11 @@ import {
 export const runtime = "nodejs";
 export const maxDuration = 60;
 function errorResponse(error: unknown) {
+  if (error instanceof PreviewServiceError)
+    return Response.json(
+      { error: error.message, scope: "service", code: error.code },
+      { status: 503, headers },
+    );
   if (error instanceof AdminError) return fail(error.message, error.status);
   if (error instanceof CatalogueError) return fail(error.message, 400);
   return fail(

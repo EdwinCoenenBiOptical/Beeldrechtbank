@@ -1,3 +1,4 @@
+import { runPreviewAttempt } from "./failures.mjs";
 import "server-only";
 import { serviceClient } from "../supabase/service";
 import { AdminError } from "../moneybird/server";
@@ -37,51 +38,47 @@ export async function preparePreview(actor: string, batch: string, id: string) {
   const entry = await catalogueAction(actor, "entry", { batch_id: batch, id });
   if (entry.preview_status === "ready") return { ready: true };
   if (entry.batch_status !== "draft") throw Error("CATALOGUE_CHANGED");
-  try {
-    const client = serviceClient(),
-      { tokens, metadata } = await currentConnection(client, true);
-    const original = await fetchOriginal(
-        tokens.accessToken,
-        metadata.driveId,
-        entry.source_path,
-      ),
-      preview = await watermarkedPreview(original),
-      key = `${batch}/${id}-${preview.fingerprint}.jpg`;
-    const { error } = await client.storage
-      .from(previewBucket)
-      .upload(key, preview.bytes, {
-        contentType: "image/jpeg",
-        upsert: false,
-        cacheControl: "3600",
-      });
-    if (error && error.statusCode !== "409" && Number(error.statusCode) !== 409)
-      throw Error("CATALOGUE_PREVIEW_STORAGE");
-    await catalogueAction(actor, "ready", {
-      batch_id: batch,
-      id,
-      key,
-      fingerprint: preview.fingerprint,
-    });
-    return { ready: true };
-  } catch (e) {
-    const code = e instanceof Error ? e.message : "";
-    const safe =
-      /^(CATALOGUE_SOURCE_(MISSING|UNAVAILABLE|MISMATCH|TOO_LARGE|FORMAT|PATH|REDIRECT)|CATALOGUE_PREVIEW_(TOO_LARGE|STORAGE)|NOT_CONNECTED|RECONNECT_REQUIRED|MICROSOFT_AUTH_FAILED|SAVE_FAILED)$/.test(
-        code,
+  return runPreviewAttempt(
+    entry.image_key,
+    async () => {
+      const client = serviceClient(),
+        { tokens, metadata } = await currentConnection(client, true);
+      const original = await fetchOriginal(
+          tokens.accessToken,
+          metadata.driveId,
+          entry.source_path,
+        ),
+        preview = await watermarkedPreview(original),
+        key = `${batch}/${id}-${preview.fingerprint}.jpg`;
+      const { error } = await client.storage
+        .from(previewBucket)
+        .upload(key, preview.bytes, {
+          contentType: "image/jpeg",
+          upsert: false,
+          cacheControl: "3600",
+        });
+      if (
+        error &&
+        error.statusCode !== "409" &&
+        Number(error.statusCode) !== 409
       )
-        ? code
-        : "CATALOGUE_PREVIEW_FAILED";
-    await catalogueAction(actor, "failed", {
-      batch_id: batch,
-      id,
-      error_code: safe,
-    });
-    throw new AdminError(
-      "De preview kon niet worden voorbereid. Controleer de bestandslocatie, het formaat of de OneDrive-koppeling. Controlecode: " +
-        safe,
-      503,
-    );
-  }
+        throw Error("CATALOGUE_PREVIEW_STORAGE");
+      await catalogueAction(actor, "ready", {
+        batch_id: batch,
+        id,
+        key,
+        fingerprint: preview.fingerprint,
+      });
+      return { ready: true };
+    },
+    async (code: string) => {
+      await catalogueAction(actor, "failed", {
+        batch_id: batch,
+        id,
+        error_code: code,
+      });
+    },
+  );
 }
 export async function storedPreview(key: string) {
   const { data, error } = await serviceClient()

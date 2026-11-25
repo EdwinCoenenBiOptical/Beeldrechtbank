@@ -1,3 +1,9 @@
+import {
+  classifyPreviewFailure,
+  sourceHttpFailure,
+  runPreviewAttempt,
+  PreviewServiceError,
+} from "../lib/catalogue/failures.mjs";
 import { normaliseCatalogueStatus } from "../lib/catalogue/status.mjs";
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -390,4 +396,82 @@ test("catalogue SQL keeps sources/drafts private, blocks premature publication a
   } finally {
     await db.close();
   }
+});
+
+test("file failures are durably skipped, while service/unknown failures pause and leave pending work untouched", async () => {
+  for (const code of [
+    "CATALOGUE_SOURCE_MISSING",
+    "CATALOGUE_SOURCE_MISMATCH",
+    "CATALOGUE_SOURCE_TOO_LARGE",
+    "CATALOGUE_SOURCE_DECODE",
+    "CATALOGUE_SOURCE_FORMAT",
+    "CATALOGUE_SOURCE_EMPTY",
+  ]) {
+    const saved = [];
+    const result = await runPreviewAttempt(
+      "voorbeeld.jpg",
+      async () => {
+        throw Error(code);
+      },
+      async (value) => saved.push(value),
+    );
+    assert.deepEqual(saved, [code]);
+    assert.equal(result.ready, false);
+    assert.equal(result.scope, "file");
+    assert.equal(result.failed, true);
+  }
+  for (const error of [
+    sourceHttpFailure(401),
+    sourceHttpFailure(403),
+    sourceHttpFailure(429),
+    sourceHttpFailure(503),
+    Error("NOT_CONNECTED"),
+    Error("RECONNECT_REQUIRED"),
+    Error("CATALOGUE_PREVIEW_STORAGE"),
+    Error("network timeout: signed-url-or-private-token"),
+  ]) {
+    let saved = false;
+    await assert.rejects(
+      runPreviewAttempt(
+        "voorbeeld.jpg",
+        async () => {
+          throw error;
+        },
+        async () => {
+          saved = true;
+        },
+      ),
+      (e) =>
+        e instanceof PreviewServiceError &&
+        !e.message.includes("private-token"),
+    );
+    assert.equal(
+      saved,
+      false,
+      "a service problem must leave the current image pending",
+    );
+  }
+  assert.equal(classifyPreviewFailure(sourceHttpFailure(404)).scope, "file");
+  await assert.rejects(
+    watermarkedPreview(Buffer.from([255, 216, 255, 0, 0])),
+    /CATALOGUE_SOURCE_DECODE/,
+  );
+  const success = await runPreviewAttempt(
+    "voorbeeld.jpg",
+    async () => ({ ready: true }),
+    async () => assert.fail("a ready preview cannot be failed"),
+  );
+  assert.equal(success.ready, true);
+  await assert.rejects(
+    runPreviewAttempt(
+      "voorbeeld.jpg",
+      async () => {
+        throw Error("CATALOGUE_SOURCE_MISSING");
+      },
+      async () => {
+        throw Error("DATABASE_UNAVAILABLE");
+      },
+    ),
+    /DATABASE_UNAVAILABLE/,
+  );
 });

@@ -172,8 +172,11 @@ Er worden geen persoonsgegevens of catalogusregels uit een lokale CSV meegecommi
    preview en bekijk het watermerk voordat je de overige previews laat verwerken.
    Voor een kleine proef kun je een CSV met enkele volledige rijen gebruiken.
 4. De beheerbrowser verwerkt beelden achter elkaar. Laat de pagina open of
-   pauzeer en hervat later. Bij een fout pauzeert de verwerking; de fout is zichtbaar
-   bij het beeld en kan na controle opnieuw worden geprobeerd. Originelen groter
+   pauzeer en hervat later. Bij een fout aan één bestand (ontbrekend, ongeldig of te groot) wordt dat beeld
+   als mislukt geregistreerd en gaat de verwerking door. Bij verbindingsproblemen,
+   verlopen toegang, HTTP 429, opslagproblemen of een onbekende uitkomst pauzeert
+   de verwerking; het huidige beeld blijft dan beschikbaar voor hervatten.
+   Mislukte bestanden kunnen na controle afzonderlijk opnieuw worden geprobeerd. Originelen groter
    dan 64 MB of 80 miljoen pixels worden geweigerd. Alleen JPEG/PNG/TIFF worden
    gedecodeerd, bij TIFF alleen de eerste pagina. Er is geen achtergrondworker.
 5. De preview is een JPEG van maximaal 1400 × 1100 pixels (zonder vergroten),

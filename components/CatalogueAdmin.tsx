@@ -144,7 +144,13 @@ export function CatalogueAdmin() {
   }
   async function prepare(id: string) {
     if (!overview?.batch) return;
-    await api({ action: "prepare", batch_id: overview.batch.id, id });
+    const result = await api({
+      action: "prepare",
+      batch_id: overview.batch.id,
+      id,
+    });
+    if (result.failed && result.scope === "file")
+      setError(`${result.image_key}: ${result.error}`);
     await load(overview.batch.id, overview.page);
   }
   function pauseProcessing() {
@@ -172,8 +178,20 @@ export function CatalogueAdmin() {
               `Beeld ${completed + 1} van ${overview.counts.requested}`,
           );
           try {
-            await api({ action: "prepare", batch_id: batch, id });
-            count++;
+            const result = await api({
+              action: "prepare",
+              batch_id: batch,
+              id,
+            });
+            if (result.ready === true) count++;
+            else if (result.failed === true && result.scope === "file") {
+              setError(
+                `${result.image_key}: ${result.error} De overige beelden worden verder verwerkt.`,
+              );
+            } else
+              throw Error(
+                "De preview-uitkomst is niet bevestigd. Vernieuw het overzicht voordat je hervat.",
+              );
           } catch (e) {
             stop.current = true;
             if (mounted.current)
@@ -194,7 +212,7 @@ export function CatalogueAdmin() {
         setMessage(
           stop.current
             ? "Verwerking gepauzeerd. Reeds voorbereide previews blijven bewaard."
-            : "De verwerking is afgerond. Controleer eventuele mislukte beelden en bekijk de previews.",
+            : "De verwerking is afgerond. Mislukte bestanden zijn overgeslagen; controleer deze afzonderlijk en bekijk de previews.",
         );
       }
     } finally {
@@ -237,7 +255,9 @@ export function CatalogueAdmin() {
                   : "Previews worden voorbereid"
                 : counts.ready === counts.requested
                   ? "Alle previews zijn gereed"
-                  : "Verwerking gepauzeerd"}
+                  : counts.ready + counts.failed === counts.requested
+                    ? "Verwerking afgerond"
+                    : "Verwerking gepauzeerd"}
             </strong>
             <p>
               {counts.ready} van {counts.requested} beelden gereed (
@@ -251,7 +271,9 @@ export function CatalogueAdmin() {
               <p className="tiny">
                 {counts.ready === counts.requested
                   ? "Alle te publiceren previews zijn gereed."
-                  : "Je kunt de verwerking hervatten; gereed werk blijft bewaard."}
+                  : counts.ready + counts.failed === counts.requested
+                    ? "Controleer de mislukte bestanden voordat je publiceert."
+                    : "Je kunt de verwerking hervatten; gereed werk blijft bewaard."}
               </p>
             )}
           </div>
