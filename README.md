@@ -150,3 +150,58 @@ pauze wordt geen achteraf te versturen stapel opgebouwd. Bestaande wachtende
 registraties blijven zichtbaar. Er is geen periodieke achtergrondwerker: een
 verzending wordt na het vastleggen van de bestelling aangeboden, of expliciet
 vanuit beheer hervat als dat veilig kan.
+
+### Catalogusimport en previews (script 017)
+
+Het beheer staat onder **Mijn account → Catalogus beheren**. Voer eerst
+`database/migrations/017_catalogue_import.sql` eenmaal uit in Supabase. Dit maakt
+private concepttabellen, een private Storage-bucket `catalogue-previews` en een
+expliciete publicatie-instelling. Er zijn geen nieuwe omgevingsvariabelen nodig;
+Supabase service-role en de bestaande OneDrive-koppeling worden gebruikt.
+Er worden geen persoonsgegevens of catalogusregels uit een lokale CSV meegecommit.
+
+1. Upload de bestaande `Catalogus.csv` (UTF-8, puntkomma, maximaal 2 MB/5.000 beelden).
+   De 14 bestaande kolommen blijven gelijk. `beeld_map` begint met `Beelden` en
+   `beeldsleutel` bevat de losse bestandsnaam. Het serverpad wordt
+   `Rechtbanktekeningen/` + `beeld_map` + `/` + `beeldsleutel`.
+2. Controleer aantallen, fouten, aandachtspunten en de voorbeeldpaden. Lege
+   downloadkeuzes zijn **Nee**; andere onbekende vlaggen zijn fouten. `|` scheidt
+   personen/trefwoorden. Engelse Excel-datums en ISO-datums worden naar ISO omgezet;
+   een Excel-tijdstip van exact middernacht wordt bij een datum genegeerd.
+3. Sla bewust een concept op. De huidige beeldbank blijft actief. Start met één
+   preview en bekijk het watermerk voordat je de overige previews laat verwerken.
+   Voor een kleine proef kun je een CSV met enkele volledige rijen gebruiken.
+4. De beheerbrowser verwerkt beelden achter elkaar. Laat de pagina open of
+   pauzeer en hervat later. Bij een fout pauzeert de verwerking; de fout is zichtbaar
+   bij het beeld en kan na controle opnieuw worden geprobeerd. Originelen groter
+   dan 64 MB of 80 miljoen pixels worden geweigerd. Alleen JPEG/PNG/TIFF worden
+   gedecodeerd, bij TIFF alleen de eerste pagina. Er is geen achtergrondworker.
+5. De preview is een JPEG van maximaal 1400 × 1100 pixels (zonder vergroten),
+   maximaal 1 MB, met herhaalde vectorwatermerken. Originele EXIF/IPTC-metadata
+   worden niet gekopieerd. Geen runtime-fonts nodig. Originelen worden uitsluitend
+   tijdelijk in servergeheugen gelezen; alleen de verkleinde preview wordt opgeslagen.
+6. Bekijk de resultaten. Publicatie vereist dat **elk** beeld met `publiceren=Ja`
+   een voorbereide preview heeft. Na expliciete bevestiging wisselt de hele
+   beeldbank in één databasehandeling naar de nieuwe selectie. Niet-genoemde
+   beelden en `publiceren=Nee` komen niet in die publicatie. De vorige import
+   blijft privé bewaard. Een volgende CSV is opnieuw een volledige selectie,
+   geen toevoeging aan de bestaande publicatie.
+
+Publieke bezoekers kunnen alleen metadata en watermerkpreviews uit de actieve
+publicatie opvragen. Bronpaden, concepten en de Storage-bucket blijven privé.
+Nieuwe preview-URL's bevatten een inhoudsversie; openbare responses hebben een
+korte cacheduur van vijf minuten. Reeds door bezoekers bewaarde previews kunnen
+niet achteraf worden ingetrokken. Voor TIFF/JPEG/PNG zijn de originelen nooit als
+browserpreview gebruikt. Downloaden en reguliere checkout voor de geïmporteerde
+catalogus worden afzonderlijk aangesloten: `download=Ja` bewaart de toestemming,
+maar activeert in deze stap nog geen originele download of facturatie. Op de
+detailpagina staat daarvoor voorlopig een contactmogelijkheid. `download=Nee`
+blijft alleen bekijken. De bestaande twaalf proefbeelden en testbestellingen
+blijven beschikbaar zolang er nog geen nieuwe catalogus gepubliceerd is; oude
+bestellingen en rechten worden niet gewijzigd bij de cataloguswissel.
+
+De broncontrole met de aangeleverde CSV omvat 1.633 unieke beelden, 1.401 met
+`download=Ja` en 232 zonder downloadtoestemming (waarvan vier leeg). Bestaan en
+leesbaarheid op OneDrive worden per beeld gecontroleerd bij het voorbereiden van
+de preview, in de drive van het reeds gekoppelde account. Dit vereist een live
+beheerderssessie; lokale tests gebruiken geen productiecredentials.
