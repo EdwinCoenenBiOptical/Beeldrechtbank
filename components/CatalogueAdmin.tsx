@@ -73,6 +73,10 @@ export function CatalogueAdmin() {
     [error, setError] = useState(""),
     [message, setMessage] = useState(""),
     [busy, setBusy] = useState(false),
+    [processing, setProcessing] = useState(false),
+    [showProgress, setShowProgress] = useState(false),
+    [currentImage, setCurrentImage] = useState(""),
+    [pauseRequested, setPauseRequested] = useState(false),
     [confirmed, setConfirmed] = useState(false),
     [publishAck, setPublishAck] = useState(false),
     [preview, setPreview] = useState<Entry | null>(null);
@@ -143,38 +147,61 @@ export function CatalogueAdmin() {
     await api({ action: "prepare", batch_id: overview.batch.id, id });
     await load(overview.batch.id, overview.page);
   }
+  function pauseProcessing() {
+    stop.current = true;
+    setPauseRequested(true);
+  }
   async function prepareAll() {
     if (!overview?.batch) return;
     const batch = overview.batch.id;
     stop.current = false;
+    setProcessing(true);
+    setShowProgress(true);
+    setPauseRequested(false);
     let count = 0;
-    while (!stop.current && mounted.current) {
-      const { ids } = await api({ action: "next", batch_id: batch });
-      if (!ids.length) break;
-      for (const id of ids) {
-        if (stop.current || !mounted.current) break;
-        try {
-          await api({ action: "prepare", batch_id: batch, id });
-          count++;
-        } catch (e) {
-          stop.current = true;
-          if (mounted.current)
-            setError(
-              e instanceof Error ? e.message : "Een preview is mislukt.",
-            );
+    let completed = overview.counts.ready;
+    try {
+      while (!stop.current && mounted.current) {
+        const { ids } = await api({ action: "next", batch_id: batch });
+        if (!ids.length) break;
+        for (const id of ids) {
+          if (stop.current || !mounted.current) break;
+          const entry = overview.entries.find((e) => e.id === id);
+          setCurrentImage(
+            entry?.image_key ||
+              `Beeld ${completed + 1} van ${overview.counts.requested}`,
+          );
+          try {
+            await api({ action: "prepare", batch_id: batch, id });
+            count++;
+          } catch (e) {
+            stop.current = true;
+            if (mounted.current)
+              setError(
+                e instanceof Error ? e.message : "Een preview is mislukt.",
+              );
+          }
+          // Refresh after EVERY image, including a failed attempt. Counts include work from earlier sessions.
+          if (mounted.current) {
+            const latest = await load(batch, overview.page);
+            completed = latest.counts.ready;
+            setMessage(`${count} previews in deze sessie voorbereid.`);
+          }
         }
-        if (mounted.current)
-          setMessage(`${count} previews in deze sessie voorbereid.`);
       }
-      if (mounted.current) await load(batch, overview.page);
-    }
-    if (mounted.current) {
-      await load(batch, overview.page);
-      setMessage(
-        stop.current
-          ? "Verwerking gepauzeerd. Reeds voorbereide previews blijven bewaard."
-          : "De verwerking is afgerond. Controleer eventuele mislukte beelden en bekijk de previews.",
-      );
+      if (mounted.current) {
+        await load(batch, overview.page);
+        setMessage(
+          stop.current
+            ? "Verwerking gepauzeerd. Reeds voorbereide previews blijven bewaard."
+            : "De verwerking is afgerond. Controleer eventuele mislukte beelden en bekijk de previews.",
+        );
+      }
+    } finally {
+      if (mounted.current) {
+        setProcessing(false);
+        setCurrentImage("");
+      }
     }
   }
   const batch = overview?.batch?.id ? overview.batch : null,
@@ -197,6 +224,60 @@ export function CatalogueAdmin() {
         originele downloads voor deze nieuwe catalogus worden in een volgende
         stap aangesloten.
       </p>
+      {showProgress && counts && (
+        <aside
+          className="catalogue-live-progress"
+          aria-label="Voortgang previewverwerking"
+        >
+          <div role="status" aria-live="polite">
+            <strong>
+              {processing
+                ? pauseRequested
+                  ? "Pauzeren na het huidige beeld…"
+                  : "Previews worden voorbereid"
+                : counts.ready === counts.requested
+                  ? "Alle previews zijn gereed"
+                  : "Verwerking gepauzeerd"}
+            </strong>
+            <p>
+              {counts.ready} van {counts.requested} beelden gereed (
+              {counts.requested
+                ? Math.floor((counts.ready / counts.requested) * 100)
+                : 0}
+              %) · {counts.failed} mislukt
+            </p>
+            {currentImage && <p className="tiny">Bezig met: {currentImage}</p>}
+            {!processing && (
+              <p className="tiny">
+                {counts.ready === counts.requested
+                  ? "Alle te publiceren previews zijn gereed."
+                  : "Je kunt de verwerking hervatten; gereed werk blijft bewaard."}
+              </p>
+            )}
+          </div>
+          <progress
+            max={Math.max(1, counts.requested)}
+            value={counts.ready}
+            aria-label="Gereedgemaakte previews"
+          />
+          {processing ? (
+            <button
+              className="secondary"
+              disabled={pauseRequested}
+              onClick={pauseProcessing}
+            >
+              Na dit beeld pauzeren
+            </button>
+          ) : (
+            <button
+              className="secondary"
+              onClick={() => setShowProgress(false)}
+            >
+              Voortgang sluiten
+            </button>
+          )}
+        </aside>
+      )}
       {error && <p role="alert">{error}</p>}
       {message && (
         <p className="status" role="status">
@@ -359,9 +440,8 @@ export function CatalogueAdmin() {
                 {busy && (
                   <button
                     className="secondary"
-                    onClick={() => {
-                      stop.current = true;
-                    }}
+                    onClick={pauseProcessing}
+                    disabled={pauseRequested}
                   >
                     Na dit beeld pauzeren
                   </button>
