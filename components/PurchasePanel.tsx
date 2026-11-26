@@ -2,7 +2,7 @@
 import { CatalogueDownloadButton } from "./CatalogueDownloadButton";
 import { readApiResponse } from "../lib/http/api-response.mjs";
 import { TestDownloadButton } from "./TestDownloadButton";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 type Quote = {
   can_download?: boolean;
   image_id?: string;
@@ -44,6 +44,22 @@ export function PurchasePanel({
     [busy, setBusy] = useState(false),
     [accepted, setAccepted] = useState(false),
     [reference, setReference] = useState("");
+  const confirmationHeading = useRef<HTMLHeadingElement>(null),
+    focusConfirmation = useRef(false);
+  useEffect(() => {
+    if (!quote?.owned || !focusConfirmation.current) return;
+    focusConfirmation.current = false;
+    const heading = confirmationHeading.current;
+    if (heading) {
+      heading.focus({ preventScroll: true });
+      heading.scrollIntoView({
+        block: "start",
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+          ? "auto"
+          : "smooth",
+      });
+    }
+  }, [quote]);
   useEffect(() => {
     const controller = new AbortController();
     fetch(
@@ -82,6 +98,7 @@ export function PurchasePanel({
       });
       const result = await readApiResponse(response, { mutation: true });
       if (!response.ok) throw Error(result.error);
+      focusConfirmation.current = result.owned === true;
       setQuote(result);
       setAccepted(false);
     } catch (e) {
@@ -100,15 +117,34 @@ export function PurchasePanel({
       {!quote && !error && <p role="status">Bestelgegevens laden…</p>}
       {quote &&
         (quote.owned ? (
-          <div className="status" role="status">
-            <strong>
+          <div className="status purchase-confirmation" role="status">
+            <h3
+              ref={confirmationHeading}
+              tabIndex={-1}
+              className="purchase-confirmation-title"
+            >
               {quote.is_test ? "Testbestelling" : "Bestelling"}{" "}
               {quote.order_number} vastgelegd
-            </strong>
+            </h3>
             <p>
               {quote.drawing_title} · {quote.purpose_name} ·{" "}
               {quote.company_name}
             </p>
+            {((catalogue && quote.can_download) || quote.can_test_download) && (
+              <p>
+                Je bestand staat klaar. Klik hieronder om het te downloaden.
+              </p>
+            )}
+            {catalogue && quote.can_download ? (
+              <CatalogueDownloadButton
+                imageId={drawingKey}
+                purposeId={purposeId}
+              />
+            ) : quote.can_test_download ? (
+              <TestDownloadButton purposeId={purposeId} />
+            ) : (
+              <p>Voor deze tekening is momenteel geen download beschikbaar.</p>
+            )}
             <p>
               {money(quote.amount_cents)} + {money(quote.vat_cents)} btw ={" "}
               {money(quote.total_cents)}
@@ -134,8 +170,7 @@ export function PurchasePanel({
                 </p>
               )}
             <p>
-              Je bedrijf heeft al een gebruiksrecht voor dit doel. Opnieuw
-              bevestigen maakt geen nieuwe bestelling.
+              Je vindt deze bestelling en de download ook terug in Mijn account.
             </p>
             {quote.customer_reference && (
               <p>
@@ -143,16 +178,9 @@ export function PurchasePanel({
                 <strong>{quote.customer_reference}</strong>
               </p>
             )}
-            {catalogue && quote.can_download ? (
-              <CatalogueDownloadButton
-                imageId={drawingKey}
-                purposeId={purposeId}
-              />
-            ) : quote.can_test_download ? (
-              <TestDownloadButton purposeId={purposeId} />
-            ) : (
-              <p>Voor deze tekening is momenteel geen download beschikbaar.</p>
-            )}
+            <a className="secondary" href="#account">
+              Bekijk mijn bestellingen →
+            </a>
             <details>
               <summary>Bekijk de vastgelegde afspraak</summary>
               <p>{quote.agreement_text}</p>
