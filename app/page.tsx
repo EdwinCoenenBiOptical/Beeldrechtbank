@@ -6,6 +6,7 @@ import { AuthPanel } from "../components/AuthPanel";
 import { PricingPanel } from "../components/PricingPanel";
 import { CatalogueAdmin } from "../components/CatalogueAdmin";
 import type { Drawing } from "../lib/catalogue/types";
+import { OrderInvoiceAdmin } from "../components/OrderInvoiceAdmin";
 import { OrderMailAdmin } from "../components/OrderMailAdmin";
 import { MoneybirdInvoiceTrial } from "../components/MoneybirdInvoiceTrial";
 import { MoneybirdCompanies } from "../components/MoneybirdCompanies";
@@ -459,6 +460,7 @@ export default function Home() {
             {page === "beheer" && <AdminApplications />}
             {page === "bedrijven" && <MoneybirdCompanies />}
             {page === "factuurproef" && <MoneybirdInvoiceTrial />}
+            {page === "facturatie" && <OrderInvoiceAdmin />}
             {page === "catalogusbeheer" && <CatalogueAdmin />}
             {page === "bestelmails" && <OrderMailAdmin />}
             {page === "informatie" && (

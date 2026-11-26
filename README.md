@@ -269,3 +269,54 @@ origineel. Download daarna opnieuw en controleer dat er geen tweede bestelling
 of mail ontstaat. Controleer op mobiel de inlogkaart en tijdens scrollen de header.
 De Moneybird-factuurproef blijft geïsoleerd tot eigen testbestellingen; deze release
 maakt geen automatische factuur voor oude of nieuwe orders.
+
+### Reguliere conceptfacturen (script 020)
+
+Voer na 019 ook `database/migrations/020_order_invoice_drafts.sql` eenmaal uit.
+Het script maakt een private wachtrij en auditlog. Alleen **nieuwe echte orders**
+worden vanaf dat moment via een transactionele trigger toegevoegd; historische
+orders en alle `is_test=true`-bestellingen worden niet ingehaald. Herhaalde
+bevestigingen/downloads maken geen nieuwe order en dus geen nieuwe factuurtaak.
+Er is geen automatische achtergrondverwerking of verzending in deze fase.
+
+Beheer loopt via **Mijn account → Facturatie**:
+
+1. Plaats voor de eerste controle bewust één nieuwe bestelling op je eigen bedrijf,
+   voor een beeld/gebruiksdoel dat nog niet is besteld. Een oude bestelling opnieuw
+   downloaden maakt geen nieuwe factuurtaak. De bestelling en bevestigingsmail
+   blijven onafhankelijk van een Moneybird-storing werken.
+2. Open de bestelling in Facturatie en controleer het factuurvoorstel. Het portal
+   leest het actuele gekoppelde Moneybird-contact en factuurcontact, inclusief
+   het factuur-e-mailadres. Dit mag bij reguliere facturatie een ander adres zijn
+   dan dat van de besteller; de historische factuurproef blijft uitsluitend naar
+   het eigen beheerdersadres werken.
+3. Het KvK-nummer en volledige Nederlandse adres moeten passen bij het portalbedrijf.
+   Btw is het bestaande unieke Nederlandse 21%-verkooptarief; omzet is Download,
+   rekeningcode 80300 (omgezet naar het Moneybird-ID). Prijzen, btw, gebruiksdoelen,
+   akkoord en PO komen uit de vastgelegde bestelling, niet uit actuele prijslijsten.
+4. Bevestig de controle en maak één concept aan. De actie vergelijkt het voorstel
+   opnieuw met verse contact-/factuurinstellingen. Een gewijzigde koppeling of
+   een ander voorstel vereist een nieuwe controle. Het concept wordt na aanmaken
+   teruggelezen en op contact, PO, regels, bedragen, btw en omzetrekening gecontroleerd.
+5. Open het concept in Moneybird voor inhoudelijke controle en eventuele bewuste
+   verzending. Het reguliere portal-endpoint heeft **geen verzendactie**. Controleer
+   daarna vanuit beheer de status opnieuw; de gecontroleerde status/factuurnummer
+   zijn ook zichtbaar in de bedrijfsbestelgeschiedenis.
+
+Aanmaak wordt vóór de Moneybird-POST duurzaam als begonnen geregistreerd. Eén
+lease per order voorkomt gelijktijdige aanmaak; het aflopen van een lease maakt
+een eerdere schrijfuitkomst niet ongedaan. Bij een timeout of onbekende uitkomst
+wordt nooit automatisch opnieuw aangemaakt. **Factuurstatus controleren / herstellen**
+zoekt op het contact, de klantreferentie en het unieke leesbare bestelnummer in de
+factuurregels. Een gevonden factuur wordt gecontroleerd en gekoppeld. Geen of
+meerdere matches, een onvolledige zoekactie of een verwijderde bekende factuur
+vereisen handmatige controle; de app maakt dan geen vervangend concept. Een zekere
+providerweigering kan na correctie en een nieuwe expliciete controle opnieuw worden
+geprobeerd. Een eerder uitgegeven factuur blijft als uitgegeven gemarkeerd, ook als
+het document later wijzigt. De factuurkoppeling en transitie-audit blijven privé.
+
+De duidelijkere downloadbevestiging gaat mee in dezelfde release: na bestellen
+staat de downloadknop direct bovenaan de bevestiging, krijgt die bevestiging focus
+en schuift het scherm ernaartoe. Mijn account blijft beschikbaar voor latere downloads.
+Deze release gebruikt de bestaande Moneybird- en SMTP-instellingen; geen nieuwe
+hostingvariabelen of scopewijzigingen zijn nodig.

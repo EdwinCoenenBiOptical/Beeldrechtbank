@@ -62,6 +62,13 @@ export async function GET(request: Request) {
           p_order_ids: orders.map((o) => o.id),
         })
       : { data: [], error: null };
+    const realIds = orders.filter((o) => !o.is_test).map((o) => o.id);
+    const { data: regular, error: regularError } = realIds.length
+      ? await client.rpc("company_order_invoices", { p_order_ids: realIds })
+      : { data: [], error: null };
+    const regularMap = new Map(
+      (Array.isArray(regular) ? regular : []).map((i: any) => [i.order_id, i]),
+    );
     const invoiceMap = new Map(
       (Array.isArray(trials) ? trials : []).map((t: any) => [t.order_id, t]),
     );
@@ -71,8 +78,9 @@ export async function GET(request: Request) {
           ...order,
           ordered_by_you: user_id === user.id,
           invoice_trial: invoiceMap.get(order.id) || null,
+          invoice: regularMap.get(order.id) || null,
         })),
-        invoice_status_unavailable: !!trialError,
+        invoice_status_unavailable: !!trialError || !!regularError,
         page,
         has_more: page * size < (count || 0),
       },
