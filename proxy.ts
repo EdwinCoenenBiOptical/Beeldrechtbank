@@ -13,7 +13,7 @@ export async function proxy(request: NextRequest) {
       values.forEach(({name, value, options}) => response.cookies.set(name, value, options));
     },
   }});
-  try { await client.auth.getUser(); } catch { /* Public catalogue remains available during auth outages. */ }
+  try { await client.auth.getUser(); } catch { /* Protected routes independently deny access when authentication cannot be verified. */ }
   return response;
 }
-export const config = {matcher: ['/api/account', '/api/admin/:path*', '/api/prices', '/api/orders/:path*', '/api/onedrive/:path*', '/api/downloads/:path*', '/auth/callback', '/reset-password']};
+export const config = {matcher: ['/api/access', '/api/drawings', '/api/catalogue/:path*', '/api/account', '/api/admin/:path*', '/api/prices', '/api/orders/:path*', '/api/onedrive/:path*', '/api/downloads/:path*', '/auth/callback', '/reset-password']};

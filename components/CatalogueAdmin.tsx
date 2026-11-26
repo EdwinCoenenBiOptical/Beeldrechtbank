@@ -266,9 +266,8 @@ export function CatalogueAdmin() {
         publiceer daarna de complete selectie. Originelen blijven in OneDrive.
       </p>
       <p className="status">
-        Publicatie maakt de beelden zichtbaar in de beeldbank. Bestellen en
-        originele downloads voor deze nieuwe catalogus worden in een volgende
-        stap aangesloten.
+        Publicatie maakt de beelden zichtbaar voor goedgekeurde accounts. Alleen
+        beelden met downloaden Ja kunnen worden besteld en gedownload.
       </p>
       {showProgress && counts && (
         <aside
@@ -642,7 +641,7 @@ export function CatalogueAdmin() {
             />
             <span>
               Ik heb de selectie en previews gecontroleerd en wil deze catalogus
-              openbaar publiceren.
+              beschikbaar maken voor goedgekeurde accounts.
             </span>
           </label>
           <button

@@ -17,10 +17,13 @@ Na de eerste build controleert `npm run typecheck` de TypeScript-code.
 
 ## Wat werkt
 
-Openbare beeldbank met twaalf meegeleverde previewbeelden, zoekfunctie,
-filters, sorteren, raster/lijstweergave en detailpagina met vergroting.
-`GET /api/drawings` levert de openbare voorbeeldcatalogus.
-Alle zaakgegevens zijn fictief; de beelden komen uit de aangeleverde mockup.
+Besloten beeldbank met CSV-import, beveiligde watermerkpreviews, zoeken,
+filters, raster/lijstweergave, bedrijfstarieven en checkout. Na script 019 zijn
+catalogus en beelden alleen toegankelijk met een bevestigd, goedgekeurd account.
+Registreren en wachtwoordherstel blijven voor bezoekers beschikbaar. De twaalf
+historische voorbeeldbeelden worden alleen gebruikt als nog geen catalogus is
+gepubliceerd; ook deze voorbeelden zijn beschermd. Zie onderaan voor de gezamenlijke
+release van script 019 en de controle van bestellen/downloaden.
 
 ## Volgende stap
 
@@ -217,3 +220,52 @@ het totale aantal gereed/mislukt blijft dat van de volledige selectie. Bij een
 geslaagde hercontrole blijft de gekozen filter actief en verdwijnt het herstelde
 beeld uit de lijst Mislukt. Een leeg geworden laatste pagina schakelt terug naar
 de laatste bestaande pagina. Dit script wijzigt geen beeldstatussen of bestanden.
+
+### Besloten portal, echte bestellingen en originele downloads (script 019)
+
+Voer `database/migrations/019_private_portal_orders.sql` eenmalig uit bij de
+gezamenlijke release. Dit sluit ook de rechtstreekse anonieme Supabase-RPC af.
+De previewbestanden en de 1.620 gepubliceerde beelden blijven behouden. Nieuwe
+bestellingen gebruiken echte catalogus-ID's; bestaande proefbestellingen worden
+niet omgezet of gefactureerd. Er worden geen nieuwe hostingvariabelen toegevoegd.
+
+- Bezoekers starten op een inlogkaart. Registreren, e-mail bevestigen en een
+  wachtwoord herstellen blijven bereikbaar. Een nog niet goedgekeurd account
+  kan alleen de eigen accountstatus bekijken. De vaste header blijft zichtbaar
+  tijdens scrollen; voor leden staan beeldbank, informatie en account in het menu.
+- Catalogusgegevens, previews en voorbeeldbeelden vereisen bij elk verzoek een
+  geldige, bevestigde, goedgekeurde sessie. API-responses zijn `private, no-store`.
+  De twaalf oude voorbeeldbestanden staan buiten `public` en worden alleen via
+  een beveiligde route geleverd. De algemene Next-image-optimizer is uitgeschakeld
+  om geen openbare kopie van een beschermd beeld te kunnen cachen.
+- `download=Nee` betekent uitsluitend bekijken: geen quote, nieuwe bestelling of
+  originele download via de API/SQL. Voor toegestane beelden gebruikt checkout
+  het bedrijfstarief, 21% btw, de actuele akkoordversie en de optionele PO-referentie.
+  Een expliciet niet-Nederlands gekoppeld Moneybird-contact kan geen downloads kopen.
+- Eén recht per bedrijf/beeld/gebruiksdoel wordt atomair vastgelegd. Collega's
+  hergebruiken dat recht; een nieuwe prijs of PO-input overschrijft het oorspronkelijke
+  akkoord niet. Downloaden en herhalen doen nooit een nieuwe factuur- of mailaanroep.
+  De bestaande bestelmailregistratie verwerkt nieuwe bestellingen precies zoals
+  eerder, met klant en Nicole als ontvangers. Er is nog geen automatische facturatie.
+- Een origineel wordt uitsluitend aangeboden na een servercontrole van het huidige
+  account, bedrijf, gebruiksrecht en beschikbaarheid. De oorspronkelijke bestandslocatie
+  wordt privé bij de bestelregel bewaard. Verplaats originelen daarom niet zonder
+  de bestaande downloadrechten mee te nemen in het beheer.
+- De browser krijgt na een tweede rechtencontrole een tijdelijke Microsoft-download
+  via een POST/303-omleiding. Dit voorkomt dat een groot TIFF-bestand door de
+  Netlify-responslimiet of servergeheugenlimiet moet. OAuth-tokens worden nooit
+  doorgegeven. De tijdelijke leverings-URL wordt niet opgeslagen of gelogd; bezit
+  van die tijdelijke URL geeft toegang tot die ene download zolang Microsoft hem
+  geldig houdt. Gebruik hiervoor geen permanente OneDrive-deellinks.
+- Elke aanbieding wordt als `offered` geregistreerd, niet als bewijs dat het bestand
+  op de computer is opgeslagen. Herhaald downloaden kan via de tekening of de
+  bedrijfsbestelgeschiedenis. Goedkeuring, bedrijfswijzigingen en `download=Nee`
+  worden ook bij herhaalde downloads opnieuw gecontroleerd.
+
+Controle na de gezamenlijke Netlify-deploy en SQL 019: probeer zonder sessie ook
+rechtstreeks een detailpagina en preview-URL; log in als goedgekeurd account,
+plaats bewust één bestelling met PO, controleer beide bevestigingsmails en het
+origineel. Download daarna opnieuw en controleer dat er geen tweede bestelling
+of mail ontstaat. Controleer op mobiel de inlogkaart en tijdens scrollen de header.
+De Moneybird-factuurproef blijft geïsoleerd tot eigen testbestellingen; deze release
+maakt geen automatische factuur voor oude of nieuwe orders.

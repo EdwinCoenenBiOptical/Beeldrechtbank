@@ -1,4 +1,9 @@
 import {
+  requireApproved,
+  portalFailure,
+  privateHeaders,
+} from "../../../../../lib/portal/server";
+import {
   catalogueAction,
   storedPreview,
 } from "../../../../../lib/catalogue/server";
@@ -10,13 +15,11 @@ export async function GET(
 ) {
   const { id } = await params,
     version = new URL(request.url).searchParams.get("v");
-  const headers = {
-    "Cache-Control": "no-store",
-    "X-Content-Type-Options": "nosniff",
-  };
+  const headers = privateHeaders;
   if (!uuid(id) || !version || !/^[a-f0-9]{64}$/.test(version))
     return new Response(null, { status: 404, headers });
   try {
+    await requireApproved();
     const { key } = await catalogueAction(null, "public_preview", {
       id,
       version,
@@ -26,10 +29,10 @@ export async function GET(
       headers: {
         ...headers,
         "Content-Type": "image/jpeg",
-        "Cache-Control": "public, max-age=300",
+        "Cache-Control": "private, no-store",
       },
     });
-  } catch {
-    return new Response(null, { status: 503, headers });
+  } catch (error) {
+    return portalFailure(error);
   }
 }
