@@ -30,7 +30,10 @@ type Entry = {
   preview_status: string;
   last_error: string | null;
 };
+type StatusFilter = "all" | "failed" | "pending" | "ready";
 type Overview = {
+  filtered_total?: number;
+  filter?: StatusFilter;
   batch: {
     id: string;
     status: string;
@@ -73,6 +76,7 @@ export function CatalogueAdmin() {
     [error, setError] = useState(""),
     [message, setMessage] = useState(""),
     [busy, setBusy] = useState(false),
+    [statusFilter, setStatusFilter] = useState<StatusFilter>("all"),
     [processing, setProcessing] = useState(false),
     [showProgress, setShowProgress] = useState(false),
     [currentImage, setCurrentImage] = useState(""),
@@ -82,13 +86,21 @@ export function CatalogueAdmin() {
     [preview, setPreview] = useState<Entry | null>(null);
   const stop = useRef(false),
     mounted = useRef(true),
-    stagingId = useRef<string | null>(null);
-  async function load(batch?: string, page = 1) {
+    stagingId = useRef<string | null>(null),
+    filterRef = useRef<StatusFilter>("all"),
+    loadGeneration = useRef(0);
+  async function load(
+    batch?: string,
+    page = 1,
+    filter: StatusFilter = filterRef.current,
+  ) {
+    const generation = ++loadGeneration.current;
     const result = await api(
       undefined,
-      `?page=${page}${batch ? "&batch_id=" + batch : ""}`,
+      `?page=${page}&status=${filter}${batch ? "&batch_id=" + batch : ""}`,
     );
-    if (mounted.current) setOverview(result);
+    if (mounted.current && generation === loadGeneration.current)
+      setOverview(result);
     return result as Overview;
   }
   useEffect(() => {
@@ -222,8 +234,24 @@ export function CatalogueAdmin() {
       }
     }
   }
+  async function changeFilter(next: StatusFilter) {
+    const previous = filterRef.current;
+    filterRef.current = next;
+    setStatusFilter(next);
+    setPreview(null);
+    await run(async () => {
+      try {
+        await load(overview?.batch?.id, 1, next);
+      } catch (error) {
+        filterRef.current = previous;
+        setStatusFilter(previous);
+        throw error;
+      }
+    });
+  }
   const batch = overview?.batch?.id ? overview.batch : null,
     counts = overview?.counts;
+  const filteredTotal = overview?.filtered_total ?? counts?.total ?? 0;
   return (
     <section className="pagehead">
       <a className="back" href="#account">
@@ -454,7 +482,9 @@ export function CatalogueAdmin() {
               <>
                 <button
                   className="primary"
-                  disabled={busy || !counts.pending}
+                  disabled={
+                    busy || counts.ready + counts.failed >= counts.requested
+                  }
                   onClick={() => run(prepareAll)}
                 >
                   Alle ontbrekende previews voorbereiden
@@ -484,6 +514,28 @@ export function CatalogueAdmin() {
                   alt={"Preview met watermerk: " + preview.title}
                 />
               </div>
+            )}
+            <div className="field" style={{ maxWidth: 320, marginTop: 24 }}>
+              <label htmlFor="catalogue-status-filter">
+                Filter op previewstatus
+              </label>
+              <select
+                id="catalogue-status-filter"
+                disabled={busy}
+                value={statusFilter}
+                onChange={(e) =>
+                  void changeFilter(e.target.value as StatusFilter)
+                }
+              >
+                <option value="all">Alle beelden</option>
+                <option value="failed">Mislukt</option>
+                <option value="pending">Nog niet voorbereid</option>
+                <option value="ready">Gereed</option>
+              </select>
+            </div>
+            <p role="status">{filteredTotal} beelden in deze selectie.</p>
+            {!overview.entries.length && (
+              <p>Er zijn geen beelden met deze status.</p>
             )}
             <div style={{ overflowX: "auto" }}>
               <table className="catalogue-table">
@@ -544,7 +596,7 @@ export function CatalogueAdmin() {
             </div>
             <p>
               Pagina {overview.page} van{" "}
-              {Math.max(1, Math.ceil(counts.total / 50))}
+              {Math.max(1, Math.ceil(filteredTotal / 50))}
             </p>
             <button
               className="secondary"
@@ -559,7 +611,7 @@ export function CatalogueAdmin() {
             </button>{" "}
             <button
               className="secondary"
-              disabled={busy || overview.page * 50 >= counts.total}
+              disabled={busy || overview.page * 50 >= filteredTotal}
               onClick={() =>
                 run(async () => {
                   await load(batch.id, overview.page + 1);

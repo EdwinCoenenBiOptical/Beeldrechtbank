@@ -231,6 +231,7 @@ test("catalogue SQL keeps sources/drafts private, blocks premature publication a
     );
     await migration("004_onedrive_connection");
     await migration("017_catalogue_import");
+    await migration("018_catalogue_status_filter");
     const parsed = parseCatalogue(
       csv([
         record(),
@@ -381,7 +382,70 @@ test("catalogue SQL keeps sources/drafts private, blocks premature publication a
       ).key,
       null,
     );
+    // Filtering must include failures beyond the first unfiltered page and clamp after a retry removes the last row.
+    const filterBatch = randomUUID(),
+      many = parseCatalogue(
+        csv(
+          Array.from({ length: 63 }, (_, i) =>
+            record(`beeld-${String(i).padStart(3, "0")}.jpg`),
+          ),
+        ),
+      );
+    await action("stage", {
+      batch_id: filterBatch,
+      hash: many.hash,
+      rows: many.rows,
+      summary: many.summary,
+      warnings: many.warnings,
+    });
+    const failedRows = [...many.rows.slice(0, 50), many.rows[62]];
+    for (const r of failedRows)
+      await action("failed", {
+        batch_id: filterBatch,
+        id: r.id,
+        error_code: "CATALOGUE_SOURCE_MISSING",
+      });
+    const filtered = async (status = "failed", page = 1, actor = admin) =>
+      (
+        await db.query("select public.server_catalogue_page($1,$2,$3,$4) r", [
+          actor,
+          filterBatch,
+          status,
+          page,
+        ])
+      ).rows[0].r;
+    const lastPage = await filtered("failed", 2);
+    assert.equal(lastPage.filtered_total, 51);
+    assert.equal(lastPage.entries.length, 1);
+    assert.equal(lastPage.entries[0].image_key, "beeld-062.jpg");
+    assert.equal((await filtered("pending")).filtered_total, 12);
+    assert.deepEqual((await filtered("ready")).entries, []);
+    await assert.rejects(filtered("failed", 1, buyer), /ADMIN_REQUIRED/);
+    await assert.rejects(filtered("unknown"), /CATALOGUE_INVALID/);
+    await assert.rejects(filtered("failed", 0), /CATALOGUE_INVALID/);
+    const retried = many.rows[62];
+    await action("ready", {
+      batch_id: filterBatch,
+      id: retried.id,
+      fingerprint,
+      key: `${filterBatch}/${retried.id}-${fingerprint}.jpg`,
+    });
+    const afterRetry = await filtered("failed", 2);
+    assert.equal(afterRetry.page, 1);
+    assert.equal(afterRetry.filtered_total, 50);
+    assert.equal(afterRetry.entries.length, 50);
+    assert.ok(!afterRetry.entries.some((r) => r.id === retried.id));
+    assert.equal(
+      (await action("status", { batch_id: filterBatch })).counts.ready,
+      1,
+    );
+    assert.equal(
+      (await publicRows()).drawings.length,
+      1,
+      "status queries cannot change the live catalogue",
+    );
     await db.exec("reset role;set role anon");
+    await assert.rejects(filtered(), /permission denied/);
     assert.equal((await publicRows()).drawings.length, 1);
     await assert.rejects(action("status"), /permission denied/);
     await assert.rejects(
@@ -389,6 +453,7 @@ test("catalogue SQL keeps sources/drafts private, blocks premature publication a
       /permission denied/,
     );
     await db.exec("reset role;set role authenticated");
+    await assert.rejects(filtered(), /permission denied/);
     await assert.rejects(
       action("publish", { batch_id: batch }),
       /permission denied/,

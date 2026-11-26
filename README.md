@@ -208,3 +208,12 @@ De broncontrole met de aangeleverde CSV omvat 1.633 unieke beelden, 1.401 met
 leesbaarheid op OneDrive worden per beeld gecontroleerd bij het voorbereiden van
 de preview, in de drive van het reeds gekoppelde account. Dit vereist een live
 beheerderssessie; lokale tests gebruiken geen productiecredentials.
+
+**Statusfilter in catalogusbeheer:** voer na 017 ook
+`database/migrations/018_catalogue_status_filter.sql` eenmaal uit. Hiermee kun je
+alle beelden, mislukte beelden, nog niet voorbereide beelden of gereedgemaakte
+previews opvragen. De database filtert vóór paginering over de volledige import;
+het totale aantal gereed/mislukt blijft dat van de volledige selectie. Bij een
+geslaagde hercontrole blijft de gekozen filter actief en verdwijnt het herstelde
+beeld uit de lijst Mislukt. Een leeg geworden laatste pagina schakelt terug naar
+de laatste bestaande pagina. Dit script wijzigt geen beeldstatussen of bestanden.

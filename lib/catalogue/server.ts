@@ -87,3 +87,34 @@ export async function storedPreview(key: string) {
   if (error || !data) throw Error("CATALOGUE_PREVIEW_STORAGE");
   return new Uint8Array(await data.arrayBuffer());
 }
+
+export async function cataloguePage(
+  actor: string,
+  batch: string,
+  status: string,
+  page: number,
+) {
+  const { data, error } = await serviceClient().rpc("server_catalogue_page", {
+    p_actor_id: actor,
+    p_batch_id: batch,
+    p_status: status,
+    p_page: page,
+  });
+  if (error) {
+    if (error.message.includes("ADMIN_REQUIRED"))
+      throw new AdminError(
+        "Alleen de beheerder mag de catalogus beheren.",
+        403,
+      );
+    if (["PGRST202", "42883"].includes(error.code))
+      throw new AdminError(
+        "Voer eerst SQL-script 018 uit om op status te filteren.",
+        503,
+      );
+    throw new AdminError(
+      "De gefilterde lijst kon niet worden geladen. Vernieuw het overzicht.",
+      503,
+    );
+  }
+  return data;
+}

@@ -14,6 +14,7 @@ import {
 } from "../../../../lib/catalogue/csv.mjs";
 import {
   catalogueAction,
+  cataloguePage,
   preparePreview,
   storedPreview,
 } from "../../../../lib/catalogue/server";
@@ -57,12 +58,22 @@ export async function GET(request: Request) {
     const page = Number(url.searchParams.get("page") || 1);
     if (!Number.isSafeInteger(page) || page < 1 || page > 1000)
       return fail("Ongeldige pagina.", 400);
-    return Response.json(
-      normaliseCatalogueStatus(
-        await catalogueAction(user.id, "status", { batch_id: batch, page }),
-      ),
-      { headers },
+    const filter = url.searchParams.get("status") || "all";
+    if (!["all", "failed", "pending", "ready"].includes(filter))
+      return fail("Ongeldige statusfilter.", 400);
+    const state = normaliseCatalogueStatus(
+      await catalogueAction(user.id, "status", { batch_id: batch, page }),
     );
+    const filtered =
+      filter !== "all" && state.batch
+        ? await cataloguePage(user.id, state.batch.id, filter, page)
+        : {
+            entries: state.entries,
+            page: state.page,
+            filtered_total: state.counts.total,
+            filter,
+          };
+    return Response.json({ ...state, ...filtered }, { headers });
   } catch (e) {
     return errorResponse(e);
   }
