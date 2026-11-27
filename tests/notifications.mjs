@@ -26,3 +26,34 @@ test('signup queues once, workers claim exclusively, failures retry and customer
  await db.exec('reset role');const final=(await db.query('select * from public.registration_notifications')).rows[0];assert.equal(final.status,'sent');assert.equal(final.provider_id,'provider-id');assert.ok(final.sent_at);
  }finally{await db.close()}
 });
+
+test('SMTP registration worker uses fixed recipient and records acceptance or a retry without changing accounts',async()=>{
+ const {dispatchRegistrations}=await import('../lib/notifications/worker.mjs');
+ const env={REGISTRATION_NOTIFICATIONS_ENABLED:'true',SMTP_HOST:'rootnet.email',SMTP_PORT:'587',SMTP_USER:'info@beeldrechtbank.nl',SMTP_PASSWORD:'fictional'};
+ const record={id:'11111111-1111-1111-1111-111111111111',lock_token:'lock',full_name:'Nicole',email:'person@example.test',company_name:'Testbedrijf',kvk_number:'12345678'};
+ for(const fail of [false,true]){
+  const calls=[];let closed=false;
+  const client={rpc:async(name,args)=>{calls.push([name,args]);return name==='claim_smtp_registration_notifications'?{data:[record]}:{data:true}}};
+  const transport={sendMail:async(mail)=>{assert.deepEqual(mail.to,['info@rechtbanktekeningen.nl']);assert.equal(mail.from.address,'info@beeldrechtbank.nl');assert.ok(mail.text.includes('https://www.beeldrechtbank.nl/#beheer'));assert.ok(!mail.text.includes('supabase.com'));if(fail)throw Error('offline');return {accepted:mail.to,messageId:'accepted-id'}},close:()=>{closed=true}};
+  assert.deepEqual(await dispatchRegistrations({env,client,transport}),fail?{sent:0,retry:1}:{sent:1,retry:0});assert.ok(closed);
+  assert.equal(calls.length,2);assert.equal(calls[1][1].p_provider_id,fail?null:'accepted-id');assert.equal(calls[1][1].p_error_code,fail?'REGISTRATION_SMTP_FAILED':null);
+ }
+ assert.deepEqual(await dispatchRegistrations({env:{}}),{disabled:true,sent:0,retry:0});
+});
+
+test('SMTP migration supports fresh installs and existing parked queues, without sending historical signups',async()=>{
+ for(const existing of [false,true]){
+ const db=new PGlite();try{
+ await db.exec(`create role anon;create role authenticated;create role service_role;create schema auth;
+ create table auth.users(id uuid primary key,email text,raw_user_meta_data jsonb,email_confirmed_at timestamptz);
+ create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;
+ grant usage on schema public to service_role;grant usage on schema public,auth to anon,authenticated;`);
+ await db.exec(await readFile(new URL('../database/migrations/001_accounts.sql',import.meta.url),'utf8'));
+ if(existing)await db.exec(await readFile(new URL('../database/migrations/006_registration_notifications.sql',import.meta.url),'utf8'));
+ await db.query('insert into auth.users values($1,$2,$3,null)',['11111111-1111-1111-1111-111111111111','old@example.test',{first_name:'Old',last_name:'User',requested_company_name:'Old',requested_kvk:'12345678'}]);
+ await db.exec(await readFile(new URL('../database/migrations/021_registration_smtp.sql',import.meta.url),'utf8'));
+ await db.query('insert into auth.users values($1,$2,$3,null)',['22222222-2222-2222-2222-222222222222','new@example.test',{first_name:'New',last_name:'User',requested_company_name:'New',requested_kvk:'87654321'}]);
+ await db.exec('set role service_role');const rows=(await db.query('select * from public.claim_smtp_registration_notifications(3)')).rows;assert.equal(rows.length,1);assert.equal(rows[0].email,'new@example.test');
+ }finally{await db.close()}
+ }
+});

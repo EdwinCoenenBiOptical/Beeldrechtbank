@@ -340,3 +340,30 @@ downloadmoment en de aanvrager blijven eronder zichtbaar. Bij een ontbrekend of
 niet meer gepubliceerd beeld blijven titel/bestandsnaam uit de registratie
 leesbaar en verschijnt een neutrale placeholder. Er wordt nooit een ander beeld
 op basis van een titel of positie in de lijst gekoppeld.
+
+### Aanmeldingsmeldingen via Rootnet (021)
+
+Nieuwe accountaanvragen krijgen een beheerdersmelding naar **info@rechtbanktekeningen.nl**,
+verstuurd vanaf info@beeldrechtbank.nl via dezelfde SMTP-configuratie als bestelbevestigingen.
+De mail vermeldt naam, e-mailadres, aangevraagd bedrijf en KvK, met een link naar
+https://www.beeldrechtbank.nl/#beheer. Er worden geen accounts automatisch goedgekeurd.
+De aanmelding wordt bij het aanmaken gemeld; e-mailbevestiging blijft vereist voor goedkeuring.
+
+Activeren:
+1. Voer `database/migrations/021_registration_smtp.sql` **eenmaal** uit in Supabase SQL Editor.
+   Dit werkt ook als de geparkeerde migratie 006 nooit is uitgevoerd. Oude aanvragen worden
+   niet alsnog gemaild; bestaande wachtende meldingen krijgen `BEFORE_SMTP_ACTIVATION`.
+   Herhaal dit script niet tijdens normaal gebruik: het sluit wachtende meldingen af.
+2. Zet servervariabele `REGISTRATION_NOTIFICATIONS_ENABLED=true` in Netlify (Functions/runtime).
+   Bestaande `SMTP_*`, `NEXT_PUBLIC_SUPABASE_URL` en `SUPABASE_SECRET_KEY` blijven in gebruik.
+   Resend/DNS-aanpassingen en een nieuw wachtwoord zijn niet nodig.
+3. Publiceer de code en controleer de Netlify Scheduled Function `registration-notifications`.
+   Die draait alleen op production, elke vijf minuten, met maximaal drie aanvragen per ronde.
+4. Test met één nieuwe aanvraag en controleer ontvangst bij info@rechtbanktekeningen.nl.
+
+Wachtrijclaims voorkomen gelijktijdig verzenden; mislukte verzendingen worden later opnieuw
+geprobeerd (maximaal tien pogingen). Bij een verbroken verbinding na SMTP-acceptatie kan
+zoals bij andere SMTP-verzendingen een dubbele melding ontstaan. Aanvragen blijven bewaard
+bij mailstoringen. De databasewachtrij is alleen voor de service-role toegankelijk.
+Logs bevatten alleen aantallen of een generieke fout, geen persoonsgegevens of secrets.
+Het bestaande POST-workerendpoint blijft optioneel bruikbaar met `NOTIFICATION_JOB_SECRET`.
