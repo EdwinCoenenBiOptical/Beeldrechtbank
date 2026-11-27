@@ -320,3 +320,23 @@ staat de downloadknop direct bovenaan de bevestiging, krijgt die bevestiging foc
 en schuift het scherm ernaartoe. Mijn account blijft beschikbaar voor latere downloads.
 Deze release gebruikt de bestaande Moneybird- en SMTP-instellingen; geen nieuwe
 hostingvariabelen of scopewijzigingen zijn nodig.
+
+### Beeldinformatie in de bestel- en downloadgeschiedenis
+
+De accountoverzichten hergebruiken de catalogusgegevens die de ingelogde pagina
+al ophaalt. Hiervoor is geen nieuwe SQL-migratie, herimport of extra catalogus-RPC
+per overzicht nodig. Downloads geven naast de bestaande bestelregel ook de
+`drawing_id` door om hetzelfde beeld te koppelen.
+
+Bestellingen tonen achtereenvolgens bestelinformatie (nummer, moment, besteller,
+PO), beeldinformatie met thumbnail (beeldnummer, titel, verdachte, zittingsdatum,
+rechtbank), en de opgeslagen prijs/gebruiksafspraak met akkoordverklaring. De
+originele bedragen, PO en akkoordtekst worden niet vervangen door catalogusdata.
+De thumbnails gebruiken alleen de bestaande beveiligde watermerkpreview-URL's.
+
+Downloads tonen een kleine thumbnail en één doorlopende regel met beeldnummer,
+titel, verdachte, zittingsdatum, rechtbank, gebruiksdoel en bestandsgrootte; het
+downloadmoment en de aanvrager blijven eronder zichtbaar. Bij een ontbrekend of
+niet meer gepubliceerd beeld blijven titel/bestandsnaam uit de registratie
+leesbaar en verschijnt een neutrale placeholder. Er wordt nooit een ander beeld
+op basis van een titel of positie in de lijst gekoppeld.

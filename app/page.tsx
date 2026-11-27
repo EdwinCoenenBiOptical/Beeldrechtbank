@@ -179,7 +179,7 @@ export default function Home() {
           </section>
         )}
         {publicAuth && <AuthPanel mode={authMode} />}
-        {access.phase === "restricted" && <AccountPanel />}
+        {access.phase === "restricted" && <AccountPanel drawings={drawings} />}
         {member && (
           <>
             {page === "beeldbank" && (
@@ -456,7 +456,7 @@ export default function Home() {
                 mode={page as "inloggen" | "registreren" | "herstellen"}
               />
             )}
-            {page === "account" && <AccountPanel />}
+            {page === "account" && <AccountPanel drawings={drawings} />}
             {page === "beheer" && <AdminApplications />}
             {page === "bedrijven" && <MoneybirdCompanies />}
             {page === "factuurproef" && <MoneybirdInvoiceTrial />}

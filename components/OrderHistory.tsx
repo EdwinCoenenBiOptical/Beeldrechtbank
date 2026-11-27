@@ -1,7 +1,9 @@
 "use client";
 import { CatalogueDownloadButton } from "./CatalogueDownloadButton";
 import { DownloadHistory } from "./DownloadHistory";
-import { useEffect, useState } from "react";
+import { HistoryImageInfo } from "./HistoryImage";
+import type { Drawing } from "../lib/catalogue/types";
+import { useEffect, useMemo, useState } from "react";
 type Item = {
   id: string;
   drawing_id: string;
@@ -46,7 +48,11 @@ const date = (value: string) =>
     timeStyle: "short",
     timeZone: "Europe/Amsterdam",
   }).format(new Date(value));
-export function OrderHistory() {
+export function OrderHistory({ drawings = [] }: { drawings?: Drawing[] } = {}) {
+  const images = useMemo(
+    () => new Map(drawings.map((d) => [String(d.id), d])),
+    [drawings],
+  );
   const [page, setPage] = useState(1),
     [refresh, setRefresh] = useState(0),
     [history, setHistory] = useState<History | null>(null),
@@ -108,57 +114,65 @@ export function OrderHistory() {
       )}
       {history?.orders.map((order) => (
         <article className="history-order panel" key={order.id}>
-          <div className="history-order-heading">
-            <strong>
-              {order.is_test ? "Testbestelling" : "Bestelling"}{" "}
-              {order.order_number}
-            </strong>
-            <span>{date(order.accepted_at)}</span>
-          </div>
-          <p className="tiny muted">
-            {order.ordered_by_you
-              ? "Door jou besteld"
-              : "Door een collega besteld"}
-          </p>
-          {order.customer_reference && (
-            <p>
-              Jouw referentie / PO-nummer:{" "}
-              <strong>{order.customer_reference}</strong>
+          <div className="history-order-info" aria-label="Bestelinformatie">
+            <div className="history-order-heading">
+              <strong>
+                {order.is_test ? "Testbestelling" : "Bestelling"}{" "}
+                {order.order_number}
+              </strong>
+              <span>{date(order.accepted_at)}</span>
+            </div>
+            <p className="tiny muted">
+              {order.ordered_by_you
+                ? "Door jou besteld"
+                : "Door een collega besteld"}
             </p>
-          )}
+            {order.customer_reference && (
+              <p>
+                Jouw referentie / PO-nummer:{" "}
+                <strong>{order.customer_reference}</strong>
+              </p>
+            )}
+          </div>
           {order.order_items.map((item) => (
             <div className="history-item" key={item.id}>
-              <h4>{item.drawing_title_snapshot}</h4>
-              <p>
-                {item.purpose_name_snapshot} · Herhaald gebruik door hetzelfde
-                bedrijf
-              </p>
-              <dl className="order-totals">
-                <div>
-                  <dt>Exclusief btw</dt>
-                  <dd>{money(item.amount_cents, item.currency)}</dd>
-                </div>
-                <div>
-                  <dt>Btw ({item.vat_percent}%)</dt>
-                  <dd>{money(item.vat_cents, item.currency)}</dd>
-                </div>
-                <div>
-                  <dt>Totaal inclusief btw</dt>
-                  <dd>
-                    <strong>{money(item.total_cents, item.currency)}</strong>
-                  </dd>
-                </div>
-              </dl>
-              {!order.is_test && (
-                <CatalogueDownloadButton
-                  imageId={item.drawing_id}
-                  purposeId={item.purpose_id}
-                />
-              )}
-              <details>
-                <summary>Bekijk de akkoordverklaring</summary>
-                <p>{item.agreement_text_snapshot}</p>
-              </details>
+              <HistoryImageInfo
+                drawing={images.get(item.drawing_id)}
+                title={item.drawing_title_snapshot}
+              />
+              <div className="history-price-info">
+                <h4>Prijs en akkoordverklaring</h4>
+                <p>
+                  {item.purpose_name_snapshot} · Herhaald gebruik door hetzelfde
+                  bedrijf
+                </p>
+                <dl className="order-totals">
+                  <div>
+                    <dt>Exclusief btw</dt>
+                    <dd>{money(item.amount_cents, item.currency)}</dd>
+                  </div>
+                  <div>
+                    <dt>Btw ({item.vat_percent}%)</dt>
+                    <dd>{money(item.vat_cents, item.currency)}</dd>
+                  </div>
+                  <div>
+                    <dt>Totaal inclusief btw</dt>
+                    <dd>
+                      <strong>{money(item.total_cents, item.currency)}</strong>
+                    </dd>
+                  </div>
+                </dl>
+                {!order.is_test && (
+                  <CatalogueDownloadButton
+                    imageId={item.drawing_id}
+                    purposeId={item.purpose_id}
+                  />
+                )}
+                <details>
+                  <summary>Bekijk de akkoordverklaring</summary>
+                  <p>{item.agreement_text_snapshot}</p>
+                </details>
+              </div>
             </div>
           ))}
           {!order.is_test && (
@@ -200,7 +214,7 @@ export function OrderHistory() {
           </button>
         </div>
       )}
-      <DownloadHistory />
+      <DownloadHistory drawings={drawings} />
     </section>
   );
 }
