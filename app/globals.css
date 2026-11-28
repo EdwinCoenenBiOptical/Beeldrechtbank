@@ -33,3 +33,5 @@ select{max-width:100%}.checkfield{margin:18px 0}.pagehead p{line-height:1.7}.sta
 @media(max-width:600px){.account-navigation{padding:14px 12px;margin-bottom:20px}.account-nav-group{display:block}.account-nav-label{display:block;padding:0 0 9px}.account-nav-group a{padding:9px 10px}.account-nav-group>div{gap:4px}}
 
 @media(max-width:600px){.account-workspace .toolbar{flex-wrap:wrap;gap:12px}.account-workspace .toolbar .field{max-width:100%}.account-workspace .toolbar select{max-width:100%}}
+
+.invoice-automation{margin:22px 0;background:var(--paper);border-color:#d3ddd2}.invoice-automation h3{margin-top:0}.invoice-automation .consent{margin:18px 0}.invoice-automation>p{max-width:900px;line-height:1.65}

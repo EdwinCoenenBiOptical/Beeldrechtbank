@@ -1,4 +1,5 @@
 "use client";
+import { InvoiceAutomation } from "./InvoiceAutomation";
 import { useEffect, useRef, useState } from "react";
 import { readApiResponse } from "../lib/http/api-response.mjs";
 type Job = {
@@ -10,6 +11,11 @@ type Job = {
   invoice_snapshot?: any;
   last_error: string | null;
   ever_issued: boolean;
+  delivery_state?: string;
+  auto_last_error?: string|null;
+  auto_attempts?: number;
+  auto_eligible?: boolean;
+  alert_state?: string|null;
 };
 type Row = Job & {
   order_number: number;
@@ -74,6 +80,7 @@ export function OrderInvoiceAdmin() {
       alive.current = false;
     };
   }, []);
+  useEffect(()=>{const changed=()=>setRefresh(v=>v+1);window.addEventListener('invoice-automation-changed',changed);return()=>window.removeEventListener('invoice-automation-changed',changed)},[]);
   useEffect(() => {
     let current = true;
     setLoading(true);
@@ -171,15 +178,12 @@ export function OrderInvoiceAdmin() {
         Beheer · Facturatie
       </div>
       <h2>Facturen</h2>
+      <InvoiceAutomation/>
       <p>
-        Nieuwe echte bestellingen komen hier klaar te staan. Controleer per
-        bestelling het factuurcontact, bedrag en kenmerk voordat je een concept
-        aanmaakt.
+        Hier vind je de facturatiestatus van nieuwe klantbestellingen. Controleer storingen en de bijbehorende factuur in Moneybird voordat je handmatig actie neemt.
       </p>
       <p className="status">
-        Het portal verstuurt hier geen facturen. Controleer en verstuur een
-        concept voorlopig in Moneybird. Oude bestellingen en testbestellingen
-        worden niet automatisch toegevoegd.
+        Bij ingeschakelde automatische facturatie worden nieuwe bestellingen direct vanuit Moneybird verstuurd. Oude bestellingen en testbestellingen worden niet automatisch toegevoegd.
       </p>
       {busy && (
         <p role="status">
@@ -258,7 +262,9 @@ export function OrderInvoiceAdmin() {
                     <td>{money(Number(r.total_cents))}</td>
                     <td>
                       {labels[r.status] || r.status}
-                      {r.last_error && <p className="tiny">{r.last_error}</p>}
+                      {r.delivery_state&&<p className="tiny">{r.delivery_state==='sent'?'Verstuurd':r.delivery_state==='sending'?'Verzending gestart; bevestiging controleren':r.delivery_state==='uncertain'?'Verzenduitkomst onzeker; geen automatische herhaling':r.delivery_state==='rejected'?'Verzending geweigerd':r.delivery_state==='blocked'?'Verzending geblokkeerd':'Nog niet automatisch verstuurd'}</p>}
+                      {(r.auto_last_error||r.last_error)&&<p className="tiny">{r.auto_last_error||r.last_error}</p>}
+                      {r.alert_state==='failed'&&<p className="tiny">Storingsmail niet bevestigd; controleer de mailverbinding.</p>}
                     </td>
                     <td>
                       <button
@@ -300,6 +306,10 @@ export function OrderInvoiceAdmin() {
             {detail.source.order.company_name_snapshot}
           </h3>
           <p>{labels[job.status] || job.status}</p>
+          {job.auto_last_error&&<p role="alert">Automatische verwerking: {job.auto_last_error}</p>}
+          {job.auto_eligible&&job.delivery_state!=='sent'&&<button className="secondary" disabled={busy} onClick={()=>run(async()=>{
+            const r=await fetch('/api/admin/invoice-automation',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'retry',order_id:detail.source.order.id})});const d=await readApiResponse(r,{mutation:true});if(!r.ok)throw Error(d.error||'Controle opnieuw plannen is niet gelukt.');setMessage('Opnieuw ingepland. Een onzekere verzending wordt alleen gecontroleerd en niet blind herhaald.');setRefresh(v=>v+1);
+          })}>Automatische verwerking opnieuw controleren</button>}
           {detail.source.order.customer_reference && (
             <p>
               PO / referentie:{" "}

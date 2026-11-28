@@ -17,7 +17,7 @@ type Item = {
   agreement_text_snapshot: string;
 };
 type Order = {
-  invoice?: { status: string; invoice_number: string | null } | null;
+  invoice?: { status: string; invoice_number: string | null; delivery_state?:string; sent_at?:string|null } | null;
   customer_reference?: string | null;
   id: string;
   order_number: number;
@@ -178,7 +178,7 @@ export function OrderHistory({ drawings = [], admin = false }: { drawings?: Draw
           {!order.is_test && (
             <p className="notice">
               {order.invoice?.invoice_number
-                ? "Factuur " + order.invoice.invoice_number
+                ? "Factuur " + order.invoice.invoice_number + (order.invoice.delivery_state==='sent'?' · Verstuurd':'')
                 : order.invoice?.status === "draft"
                   ? "Factuur in voorbereiding"
                   : order.invoice?.status === "issued"

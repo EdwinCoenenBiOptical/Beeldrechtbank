@@ -1,3 +1,4 @@
+import {automaticInvoiceChecks} from "./helpers/automatic-invoices.mjs";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
@@ -181,7 +182,7 @@ test("real invoice plan uses company billing recipient, exact PO and amounts, fi
   assert.equal(payload.sales_invoice.reference, "PO-001");
   assert.equal(payload.sales_invoice.details_attributes[0].price, "100.00");
 });
-test("real invoice ledger queues only future real orders, enforces tenant/admin access, recovers a timed-out create without a second POST and never sends", async () => {
+test("real invoice ledger enforces prospective enrollment, tenant/admin access, manual draft-only controls and automatic create/send recovery without duplicates", async () => {
   const db = new PGlite({ extensions: { btree_gist } });
   try {
     await db.exec(
@@ -671,6 +672,7 @@ test("real invoice ledger queues only future real orders, enforces tenant/admin 
       (await db.query("select count(*) n from private.order_invoice_events"))
         .rows[0].n > 10,
     );
+    await automaticInvoiceChecks({db,addOrder,admin,buyer,contact,options,administration,migrate,rawInvoice});
   } finally {
     await db.close();
   }

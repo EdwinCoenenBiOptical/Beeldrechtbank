@@ -385,3 +385,11 @@ de service-role wordt gebruikt; klanten krijgen hierdoor geen uitgebreidere data
 De respons bevat naam/bedrijf, maar geen gebruikerscredentials, bronpaden of downloadlinks.
 Het beheerbesteloverzicht biedt geen download namens een ander bedrijf. Factuuracties en
 hun bescherming tegen dubbele facturen blijven in het bestaande facturatiescherm.
+
+### Automatische facturen en directe verzending (022)
+
+Zie [de inrichting en herstelprocedure](database/AUTOMATIC_INVOICES.md).
+Automatisering wordt expliciet ingeschakeld onder Beheer → Facturen en werkt alleen
+voor nieuwe echte bestellingen na die eerste inschakeling. Bestaande orders en proeven
+blijven uitgesloten. Er zijn afzonderlijke duurzame beveiligingen voor aanmaken en
+verzenden; onbekende uitkomsten worden gelezen/hersteld, nooit blind herhaald.
