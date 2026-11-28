@@ -367,3 +367,21 @@ zoals bij andere SMTP-verzendingen een dubbele melding ontstaan. Aanvragen blijv
 bij mailstoringen. De databasewachtrij is alleen voor de service-role toegankelijk.
 Logs bevatten alleen aantallen of een generieke fout, geen persoonsgegevens of secrets.
 Het bestaande POST-workerendpoint blijft optioneel bruikbaar met `NOTIFICATION_JOB_SECRET`.
+
+### Account- en beheernavigatie
+
+`AccountWorkspace` biedt onder de hoofdheader twee navigatiegroepen. Alle goedgekeurde
+gebruikers zien Accountinformatie (`#account`), Bestellingen (`#bestellingen`) en Downloads
+(`#downloads`). Die histories blijven beperkt tot hun eigen bedrijf. Beheerders krijgen
+Aanmeldingen (`#beheer`, standaard wachtend), Personen (`#personen`, standaard goedgekeurd),
+Bedrijven & Moneybird, Downloads (`#beheer-downloads`), Bestellingen (`#beheer-bestellingen`),
+Facturen, OneDrive en Catalogus. De actieve pagina is gemarkeerd met `aria-current`.
+Oude beheerlinks blijven werken; bestelmailinstellingen en de eerdere factuurproef zijn
+bereikbaar onder Facturen. Er wordt hiervoor geen databasewijziging uitgevoerd.
+
+`GET /api/admin/history?kind=orders|downloads&page=1` is een alleen-lezen overzicht voor
+alle bedrijven. De server valideert eerst de ingelogde beheerder met `requireAdmin` voordat
+de service-role wordt gebruikt; klanten krijgen hierdoor geen uitgebreidere databasepolicy.
+De respons bevat naam/bedrijf, maar geen gebruikerscredentials, bronpaden of downloadlinks.
+Het beheerbesteloverzicht biedt geen download namens een ander bedrijf. Factuuracties en
+hun bescherming tegen dubbele facturen blijven in het bestaande facturatiescherm.

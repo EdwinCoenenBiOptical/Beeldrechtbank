@@ -170,7 +170,7 @@ export function OrderInvoiceAdmin() {
       <div className="eyebrow" style={{ marginTop: 25 }}>
         Beheer · Facturatie
       </div>
-      <h2>Conceptfacturen beheren</h2>
+      <h2>Facturen</h2>
       <p>
         Nieuwe echte bestellingen komen hier klaar te staan. Controleer per
         bestelling het factuurcontact, bedrag en kenmerk voordat je een concept
@@ -206,7 +206,7 @@ export function OrderInvoiceAdmin() {
             <option value="queued">Nog geen concept</option>
             <option value="draft">Concept</option>
             <option value="attention">Controle nodig</option>
-            <option value="issued">Uitgegeven</option>
+            <option value="issued">Uitgegeven in Moneybird</option>
           </select>
         </div>
         <button

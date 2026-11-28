@@ -10,6 +10,8 @@ type Entry = {
   byte_count: number;
   is_test: boolean;
   downloaded_by_you: boolean;
+  company_name?: string;
+  downloaded_by_name?: string;
   order_items: {
     drawing_id: string;
     drawing_title_snapshot: string;
@@ -17,8 +19,8 @@ type Entry = {
   };
 };
 export function DownloadHistory({
-  drawings = [],
-}: { drawings?: Drawing[] } = {}) {
+  drawings = [], admin = false,
+}: { drawings?: Drawing[]; admin?: boolean } = {}) {
   const images = useMemo(
     () => new Map(drawings.map((d) => [String(d.id), d])),
     [drawings],
@@ -36,7 +38,7 @@ export function DownloadHistory({
     setBusy(true);
     setError("");
     setData(null);
-    fetch("/api/downloads/history?page=" + page, {
+    fetch((admin ? "/api/admin/history?kind=downloads&" : "/api/downloads/history?") + "page=" + page, {
       cache: "no-store",
       signal: controller.signal,
     })
@@ -52,11 +54,11 @@ export function DownloadHistory({
         if (!controller.signal.aborted) setBusy(false);
       });
     return () => controller.abort();
-  }, [refresh, page]);
+  }, [refresh, page, admin]);
   return (
     <section aria-labelledby="download-history-title">
       <div className="toolbar">
-        <h3 id="download-history-title">Downloadgeschiedenis</h3>
+        <h3 id="download-history-title">{admin ? "Alle downloads" : "Downloadgeschiedenis"}</h3>
         <button
           className="secondary"
           disabled={busy}
@@ -98,7 +100,7 @@ export function DownloadHistory({
                   timeZone: "Europe/Amsterdam",
                 }).format(new Date(d.offered_at))}{" "}
                 · {d.is_test ? "Testdownload · " : ""}
-                {d.downloaded_by_you
+                {admin ? `${d.company_name || "Bedrijf"} · ${d.downloaded_by_name || "Gebruiker"}` : d.downloaded_by_you
                   ? "Door jou aangevraagd"
                   : "Door een collega aangevraagd"}{" "}
                 · Bestand aangeboden aan de browser

@@ -1,6 +1,5 @@
 "use client";
 import { CatalogueDownloadButton } from "./CatalogueDownloadButton";
-import { DownloadHistory } from "./DownloadHistory";
 import { HistoryImageInfo } from "./HistoryImage";
 import type { Drawing } from "../lib/catalogue/types";
 import { useEffect, useMemo, useState } from "react";
@@ -30,6 +29,8 @@ type Order = {
     sent_at: string | null;
   } | null;
   ordered_by_you: boolean;
+  company_name_snapshot?: string;
+  ordered_by_name?: string;
   order_items: Item[];
 };
 type History = {
@@ -48,7 +49,7 @@ const date = (value: string) =>
     timeStyle: "short",
     timeZone: "Europe/Amsterdam",
   }).format(new Date(value));
-export function OrderHistory({ drawings = [] }: { drawings?: Drawing[] } = {}) {
+export function OrderHistory({ drawings = [], admin = false }: { drawings?: Drawing[]; admin?: boolean } = {}) {
   const images = useMemo(
     () => new Map(drawings.map((d) => [String(d.id), d])),
     [drawings],
@@ -63,7 +64,7 @@ export function OrderHistory({ drawings = [] }: { drawings?: Drawing[] } = {}) {
     setBusy(true);
     setHistory(null);
     setError("");
-    fetch("/api/orders/history?page=" + page, {
+    fetch((admin ? "/api/admin/history?kind=orders&" : "/api/orders/history?") + "page=" + page, {
       cache: "no-store",
       signal: controller.signal,
     })
@@ -84,11 +85,11 @@ export function OrderHistory({ drawings = [] }: { drawings?: Drawing[] } = {}) {
         if (!controller.signal.aborted) setBusy(false);
       });
     return () => controller.abort();
-  }, [page, refresh]);
+  }, [page, refresh, admin]);
   return (
     <section className="order-history" aria-labelledby="history-title">
       <div className="toolbar">
-        <h3 id="history-title">Bestellingen van jouw bedrijf</h3>
+        <h3 id="history-title">{admin ? "Alle bestellingen" : "Bestellingen van jouw bedrijf"}</h3>
         <button
           className="secondary"
           disabled={busy}
@@ -98,8 +99,7 @@ export function OrderHistory({ drawings = [] }: { drawings?: Drawing[] } = {}) {
         </button>
       </div>
       <p className="muted">
-        Hier vind je de bestellingen en gebruiksafspraken van jouw bedrijf,
-        inclusief die van collega’s.
+        {admin ? "Bestellingen van alle bedrijven. Dit overzicht maakt geen nieuwe bestellingen of facturen aan." : "Hier vind je de bestellingen en gebruiksafspraken van jouw bedrijf, inclusief die van collega’s."}
       </p>
       {busy && <p role="status">Bestellingen laden…</p>}
       {error && <p role="alert">{error}</p>}
@@ -123,7 +123,7 @@ export function OrderHistory({ drawings = [] }: { drawings?: Drawing[] } = {}) {
               <span>{date(order.accepted_at)}</span>
             </div>
             <p className="tiny muted">
-              {order.ordered_by_you
+              {admin ? `${order.company_name_snapshot || "Bedrijf"} · ${order.ordered_by_name || "Gebruiker"}` : order.ordered_by_you
                 ? "Door jou besteld"
                 : "Door een collega besteld"}
             </p>
@@ -162,7 +162,7 @@ export function OrderHistory({ drawings = [] }: { drawings?: Drawing[] } = {}) {
                     </dd>
                   </div>
                 </dl>
-                {!order.is_test && (
+                {!admin && !order.is_test && (
                   <CatalogueDownloadButton
                     imageId={item.drawing_id}
                     purposeId={item.purpose_id}
@@ -214,7 +214,7 @@ export function OrderHistory({ drawings = [] }: { drawings?: Drawing[] } = {}) {
           </button>
         </div>
       )}
-      <DownloadHistory drawings={drawings} />
+
     </section>
   );
 }

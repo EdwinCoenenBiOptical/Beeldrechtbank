@@ -4,13 +4,8 @@ import { usePortalAccess } from "../lib/portal/use-access";
 import { browserClient } from "../lib/supabase/browser";
 import { AuthPanel } from "../components/AuthPanel";
 import { PricingPanel } from "../components/PricingPanel";
-import { CatalogueAdmin } from "../components/CatalogueAdmin";
 import type { Drawing } from "../lib/catalogue/types";
-import { OrderInvoiceAdmin } from "../components/OrderInvoiceAdmin";
-import { OrderMailAdmin } from "../components/OrderMailAdmin";
-import { MoneybirdInvoiceTrial } from "../components/MoneybirdInvoiceTrial";
-import { MoneybirdCompanies } from "../components/MoneybirdCompanies";
-import { AdminApplications } from "../components/AdminApplications";
+import { AccountWorkspace, accountPages } from "../components/AccountWorkspace";
 import { AccountPanel } from "../components/AccountPanel";
 
 const date = (s: string) =>
@@ -456,13 +451,7 @@ export default function Home() {
                 mode={page as "inloggen" | "registreren" | "herstellen"}
               />
             )}
-            {page === "account" && <AccountPanel drawings={drawings} />}
-            {page === "beheer" && <AdminApplications />}
-            {page === "bedrijven" && <MoneybirdCompanies />}
-            {page === "factuurproef" && <MoneybirdInvoiceTrial />}
-            {page === "facturatie" && <OrderInvoiceAdmin />}
-            {page === "catalogusbeheer" && <CatalogueAdmin />}
-            {page === "bestelmails" && <OrderMailAdmin />}
+            {accountPages.includes(page) && <AccountWorkspace page={page} drawings={drawings} />}
             {page === "informatie" && (
               <section className="pagehead">
                 <div className="eyebrow">Over de beeldbank</div>
